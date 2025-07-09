@@ -1,0 +1,13 @@
+{
+	"id": "ReinforcementLearningBridge",
+	"name": "RLBridge",
+	"author": ["Angel Valentin"],
+	"description": "A bridge to connect balatro data and actionts to a RL ai",
+	"prefix": "RLBridge",
+	"main_file": "main.lua",
+	"priority": -20,
+	"badge_colour": "FF230A",
+	"badge_text_colour": "ABC123",
+	"display_name": "YM",
+	"version": "1.0.0"
+}
