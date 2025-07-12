@@ -12,4 +12,4 @@ The goal is the follow:
 
 I am currenly on Arch Linux, so I had to follow the setup through Proton
 Currently writing code in a more reliable directory and having it symlink to the correct directory mods folder
-Made a symlink -> ln -s ~/dev/balatro-rl/mod /mnt/gamerlinuxssd/SteamLibrary/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods/RLBridge
+Made a symlink -> ln -s ~/dev/balatro-rl/RLBridge /mnt/gamerlinuxssd/SteamLibrary/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods/RLBridge

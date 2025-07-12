@@ -1,0 +1,16 @@
+[manifest]
+version = "1.0.0"
+priority = -10
+
+[[patches]]
+[patches.pattern]
+target = "main.lua"
+pattern = "G:update(dt)"
+position = "after"
+payload = '''
+local ai = require("ai")
+ai.update()
+'''
+match_indent = true
+times = 1
+

@@ -1,0 +1,64 @@
+[manifest]
+version = "1.0.0"
+priority = -10
+
+[[patches]]
+[patches.module]
+source = "init.lua"
+before = "main.lua"
+name = "init"
+[[patches]]
+[patches.module]
+source = "output.lua"
+before = "main.lua"
+name = "output"
+[[patches]]
+[patches.module]
+source = "input.lua"
+before = "main.lua"
+name = "input"
+[[patches]]
+[patches.module]
+source = "utils.lua"
+before = "main.lua"
+name = "utils"
+[[patches]]
+[patches.module]
+source = "actions.lua"
+before = "main.lua"
+name = "actions"
+[[patches]]
+[patches.module]
+source = "communication.lua"
+before = "main.lua"
+name = "communication"
+[[patches]]
+[patches.module]
+source = "ai.lua"
+before = "main.lua"
+name = "ai"
+
+
+[[patches]]
+[patches.pattern]
+target = "animatedsprite.lua"
+pattern = "table.insert(G.ANIMATIONS, self)"
+position = "before"
+payload = '''
+local init = require("init")
+if DISABLE_ANIMATIONS then return end
+'''
+match_indent = true
+times = 1
+
+[[patches]]
+[patches.pattern]
+target = "main.lua"
+pattern = "G:start_up()"
+position = "after"
+payload = '''
+local init = require("init")
+init.start_run()
+'''
+match_indent = true
+times = 1
