@@ -13,3 +13,11 @@ The goal is the follow:
 I am currenly on Arch Linux, so I had to follow the setup through Proton
 Currently writing code in a more reliable directory and having it symlink to the correct directory mods folder
 Made a symlink -> ln -s ~/dev/balatro-rl/RLBridge /mnt/gamerlinuxssd/SteamLibrary/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods/RLBridge
+
+## TODO
+### Connect Balatro to real AI
+- Socket communication
+- RL python working
+### AI Necessities
+- Make it so that the AI can choose between skipping blind or selecting blind instead of auto selecting
+- Get access to state like money, discards, hands played etc
