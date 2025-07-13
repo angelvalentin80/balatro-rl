@@ -37,6 +37,11 @@ name = "communication"
 source = "ai.lua"
 before = "main.lua"
 name = "ai"
+[[patches]]
+[patches.module]
+source = "dkjson.lua"
+before = "main.lua"
+name = "dkjson"
 
 
 [[patches]]

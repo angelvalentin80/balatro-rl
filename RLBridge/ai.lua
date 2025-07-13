@@ -1,5 +1,5 @@
 --- RLBridge AI controller module
---- Main AI loop that handles state monitoring, action execution, and communication
+--- Main AI loop that handles state monitoring, action execution, and file-based communication
 --- Runs every frame and coordinates between game state observation and AI decisions
 
 local AI = {}
@@ -28,6 +28,7 @@ end
 function AI.update()
     -- Get current game state
     local current_state = output.get_game_state()
+    local available_actions = action.get_available_actions()
 
     -- Don't continue if state = -1
     if current_state.state == -1 then
@@ -35,33 +36,34 @@ function AI.update()
     end
 
     -- Don't continue if there are no actions for the AI to do
-    if next(current_state.available_actions) == nil then
+    if next(available_actions) == nil then
         return
     end
 
     -- Create simple hash to detect state changes
     local state_hash = AI.hash_state(current_state)
-    local actions_hash = AI.hash_actions(current_state.available_actions)
+    local actions_hash = AI.hash_actions(available_actions)
 
-    -- Send state update if anything meaningful changed
-    if state_hash ~= last_state_hash then
-        utils.log_ai("State changed to: " .. current_state.state .. " (" .. utils.state_name(current_state.state) .. ")")
-        action.reset_state()
-        communication.send_state(current_state)
-        last_state_hash = state_hash
-    end
+    -- Request action from AI if state or actions changed
+    if state_hash ~= last_state_hash or actions_hash ~= last_actions_hash then
+        if state_hash ~= last_state_hash then
+            utils.log_ai("State changed to: " ..
+                current_state.state .. " (" .. utils.state_name(current_state.state) .. ")")
+            action.reset_state()
+            last_state_hash = state_hash
+        end
 
-    -- Send actions update if available actions changed
-    if actions_hash ~= last_actions_hash then
-        utils.log_ai("Available actions changed")
-        communication.send_actions(current_state.available_actions)
-        last_actions_hash = actions_hash
-    end
+        if actions_hash ~= last_actions_hash then
+            utils.log_ai("Available actions changed: " ..
+                table.concat(utils.get_action_names(available_actions), ", "))
+            last_actions_hash = actions_hash
+        end
 
-    -- Check for incoming actions from AI
-    local ai_action = communication.receive_action()
-    if ai_action then
-        pending_action = ai_action
+        -- Request action from AI via file I/O
+        local ai_response = communication.request_action(current_state, available_actions)
+        if ai_response and ai_response.action ~= "no_action" then
+            pending_action = ai_response
+        end
     end
 
     -- Execute pending action
@@ -74,9 +76,6 @@ function AI.update()
         end
         pending_action = nil
     end
-
-    -- TODO TODO Fallback: Auto-play for testing (remove this when AI is connected)
-    AI.auto_play_fallback(current_state)
 end
 
 --- Create simple hash of game state for change detection
@@ -98,46 +97,6 @@ function AI.hash_actions(actions)
     end
     table.sort(action_names)
     return table.concat(action_names, ",")
-end
-
---- TESTING TESTING TESTING TESTING
---- Simple fallback AI for testing ONLY - DO NOT USE FOR REAL AI
---- This is purely for testing input mechanisms and game flow
---- Automatically selects blinds when no real AI is connected
---- @param game_state table Current game state data
---- @return nil
-function AI.auto_play_fallback(game_state)
-    -- Only auto-play if no real AI is connected and actions are available
-    if not communication.is_connected() or pending_action then
-        return
-    end
-
-    -- Auto-select blind for testing
-    if game_state.state == G.STATES.MENU and game_state.available_actions[action.START_RUN] then
-        local result = action.execute_action(action.START_RUN, {}) -- TODO consolidate this pattern
-        if result.success then
-            utils.log_ai_dummy("Auto start run executed")
-        else
-            utils.log_error("Auto Action failed: " .. (result.error or "Unknown Error"))
-        end
-    end
-    if game_state.state == G.STATES.BLIND_SELECT and game_state.available_actions[action.SELECT_BLIND] then
-        local result = action.execute_action(action.SELECT_BLIND, {})
-        if result.success then
-            utils.log_ai_dummy("Auto blind selection executed")
-        else
-            utils.log_error("Auto Action failed: " .. (result.error or "Unknown Error"))
-        end
-    end
-    if game_state.state == G.STATES.SELECTING_HAND and game_state.available_actions[action.SELECT_HAND] then
-        local result = action.execute_action(action.SELECT_HAND, { card_indices = { 1, 3, 5 } }) -- TODO for now of course
-        if result.success then
-            utils.log_testing(utils.dump_everything(output.get_game_state()))
-            utils.log_ai_dummy("Auto selecting hand")
-        else
-            utils.log_error("Auto Action failed: " .. (result.error or "Unknown Error"))
-        end
-    end
 end
 
 return AI

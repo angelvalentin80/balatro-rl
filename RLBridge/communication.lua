@@ -1,121 +1,137 @@
 --- RLBridge communication module
---- Handles communication between the game and external AI system
---- Currently simulated, will be replaced with actual socket implementation
----
---- TODO make sure we send the whole game state in the moment that the game is ready for input to AI
---- TODO we shouldn't send state and game_state separately. It should just be one comm
---- TODO we should only send state too when there's an action available from the AI. like the AI just knowing that the
---- sate is "SELECT_HAND" doesn't do anything if there are no available actions
+--- Handles file-based communication between the game and external AI system
 
 local COMM = {}
 local utils = require("utils")
 local action = require("actions")
+local json = require("dkjson")
 
--- Socket communication (placeholder for now)
--- You'll need to implement actual socket connection later
-local socket_connected = false
-local message_queue = {}
+-- File-based communication settings
+local comm_enabled = false
+local request_file = "/tmp/balatro_request.json"
+local response_file = "/tmp/balatro_response.json"
+local request_counter = 0
+local last_response_time = 0
 
---- Initialize socket connection
---- Sets up communication channel with external AI system
---- @return nil
-function COMM.init()
-    utils.log_comm("Initializing communication...")
-    -- TODO: Set up actual socket connection
-    -- For now, just simulate connection
-    socket_connected = true
-    utils.log_comm("Ready (simulated)")
-end
-
---- Send game state to AI
---- Transmits current game state data to the external AI system
---- @param game_state table Current game state data
---- @return boolean True if sent successfully, false otherwise
-function COMM.send_state(game_state)
-    if not socket_connected then
-        return false
-    end
-
-    local message = {
-        type = "state_update",
-        timestamp = os.time(), -- or use G.TIMERS.REAL for game time
-        data = game_state
-    }
-
-    -- TODO: Replace with actual socket send
-    utils.log_comm("Sending state: " .. tostring(game_state.state))
-    -- For debugging, you could write to a file here
-
-    return true
-end
-
---- Send available actions to AI
---- Transmits list of currently available actions to the AI system
---- @param available_actions table Available actions with options
---- @return boolean True if sent successfully, false otherwise
-function COMM.send_actions(available_actions)
-    if not socket_connected then
-        return false
-    end
-
-    local message = {
-        type = "actions_available",
-        timestamp = os.time(),
-        actions = available_actions
-    }
-
-    -- TODO: Replace with actual socket send
-    utils.log_comm("Available actions: " .. table.concat(COMM.get_action_names(available_actions), ", "))
-
-    return true
-end
-
---- Receive action from AI (placeholder)
---- Gets the next action command from the external AI system
---- @return table|nil Action data if available, nil otherwise
-function COMM.receive_action()
-    if not socket_connected then
+--- Check if response file has new content
+--- @param expected_id number Expected request ID
+--- @return table|nil Response data if new response available, nil otherwise
+local function check_for_response(expected_id)
+    local response_file_handle = io.open(response_file, "r")
+    if not response_file_handle then
         return nil
     end
 
-    -- TODO: Replace with actual socket receive
-    -- For now, return nil (no action from AI)
-    return nil
+    local response_json = response_file_handle:read("*all")
+    response_file_handle:close()
 
-    -- Example of what this should return:
-    -- return {
-    --     type = "action",
-    --     action = "select_blind",
-    --     params = {blind_type = "small"},
-    --     request_id = "abc123"
-    -- }
-end
-
---- Helper function to get action names from available actions
---- Extracts just the action names for logging and debugging
---- @param available_actions table Available actions table
---- @return table Array of action names
-function COMM.get_action_names(available_actions)
-    local names = {}
-    for action_id, _ in pairs(available_actions) do
-        table.insert(names, action.get_action_name(action_id))
+    if not response_json or response_json == "" then
+        return nil
     end
-    return names
+
+    local response_data = json.decode(response_json)
+    if not response_data then
+        return nil
+    end
+
+    -- Check if this is a new response for our request
+    if response_data.id == expected_id and response_data.timestamp then
+        if response_data.timestamp > last_response_time then
+            last_response_time = response_data.timestamp
+            return response_data
+        end
+    end
+
+    return nil
 end
 
---- Check if socket is connected
---- Returns the current connection status
---- @return boolean True if connected, false otherwise
+--- Initialize file-based communication
+--- Sets up file-based communication channel with external AI system
+--- @return nil
+function COMM.init()
+    utils.log_comm("Initializing file-based communication...")
+    comm_enabled = true
+    last_response_time = 0 -- Reset response tracking
+
+    utils.log_comm("Ready for file-based requests")
+    utils.log_comm("Request file: " .. request_file)
+    utils.log_comm("Response file: " .. response_file)
+end
+
+--- Send game turn request to AI and get action via files
+--- @param game_state table Current game state data
+--- @param available_actions table Available actions list
+--- @return table|nil Action response from AI, nil if error
+function COMM.request_action(game_state, available_actions)
+    if not comm_enabled then
+        return nil
+    end
+
+    request_counter = request_counter + 1
+
+    local request = {
+        id = request_counter,
+        timestamp = os.time(),
+        game_state = game_state,
+        available_actions = available_actions or {}
+    }
+
+    utils.log_comm("Requesting action for state: " .. tostring(game_state.state))
+
+    -- Write request to file
+    local json_data = json.encode(request)
+    if not json_data then
+        utils.log_comm("ERROR: Failed to encode request JSON")
+        return nil
+    end
+
+    local request_file_handle = io.open(request_file, "w")
+    if not request_file_handle then
+        utils.log_comm("ERROR: Cannot write to request file: " .. request_file)
+        return nil
+    end
+
+    request_file_handle:write(json_data)
+    request_file_handle:close()
+
+    -- Wait for response file (with timeout)
+    local max_wait_time = 2    -- seconds
+    local wait_interval = 0.05 -- seconds
+    local total_waited = 0
+
+    while total_waited < max_wait_time do
+        local response_data = check_for_response(request_counter)
+        if response_data then
+            utils.log_comm("AI action: " .. tostring(response_data.action))
+            return response_data
+        end
+
+        -- Sleep for a short time using busy wait
+        local start_time = os.clock()
+        while (os.clock() - start_time) < wait_interval do
+            -- Busy wait for short duration
+        end
+        total_waited = total_waited + wait_interval
+    end
+
+    utils.log_comm("ERROR: Timeout waiting for AI response")
+    return nil
+end
+
+--- Check if file communication is enabled
+--- Returns the current communication status
+--- @return boolean True if enabled, false otherwise
 function COMM.is_connected()
-    return socket_connected
+    return comm_enabled
 end
 
---- Close connection
+--- Close communication
 --- Terminates the communication channel with the AI system
 --- @return nil
 function COMM.close()
-    socket_connected = false
-    utils.log_comm("Connection closed")
+    comm_enabled = false
+    last_response_time = 0
+    utils.log_comm("File communication disabled")
 end
 
 return COMM

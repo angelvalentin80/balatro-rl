@@ -120,4 +120,17 @@ function UTIL.dump_everything(tbl, indent, visited)
     return table.concat(output, "\n")
 end
 
+--- Helper function to get action names for logging
+--- Converts action IDs to readable names for debug output
+--- @param available_actions table Available actions table with IDs
+--- @return table Array of action names
+function UTIL.get_action_names(available_actions)
+    local action = require("actions")
+    local names = {}
+    for action_id, _ in pairs(available_actions) do
+        table.insert(names, action.get_action_name(action_id))
+    end
+    return names
+end
+
 return UTIL

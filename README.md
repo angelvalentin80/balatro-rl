@@ -14,10 +14,21 @@ I am currenly on Arch Linux, so I had to follow the setup through Proton
 Currently writing code in a more reliable directory and having it symlink to the correct directory mods folder
 Made a symlink -> ln -s ~/dev/balatro-rl/RLBridge /mnt/gamerlinuxssd/SteamLibrary/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods/RLBridge
 
-## TODO
-### Connect Balatro to real AI
-- Socket communication
-- RL python working
-### AI Necessities
-- Make it so that the AI can choose between skipping blind or selecting blind instead of auto selecting
-- Get access to state like money, discards, hands played etc
+## TODO/CHANGELOG
+### File-based Communication
+- [x] JSON file communication system
+- [x] Lua file writer in mod
+- [x] Python file watcher with watchdog
+- [x] Game state transmission (hand cards, chips, available actions)
+- [x] Action reception and execution
+
+### RL Training
+- [ ] Python RL environment setup
+- [ ] AI model architecture
+- [ ] Training loop integration
+
+### Game Features  
+- [ ] Blind selection choices (skip vs select)
+- [ ] Extended game state (money, discards, hands played)
+- [ ] Shop interactions
+- [ ] Joker management
