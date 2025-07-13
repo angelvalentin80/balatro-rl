@@ -1,0 +1,6 @@
+numpy>=1.21.0
+torch>=1.9.0
+gymnasium>=0.26.0  # For RL environment interface
+stable-baselines3>=1.6.0  # For RL algorithms
+tensorboard>=2.8.0  # For training visualization
+watchdog>=2.1.0  # For file system monitoring

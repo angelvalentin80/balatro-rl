@@ -14,9 +14,6 @@ function O.get_game_state()
         -- Basic state info
         state = G.STATE,
 
-        -- Available actions for AI
-        available_actions = actions.get_available_actions(),
-
         -- Game progression
         -- round = G.GAME and G.GAME.round or 0,
         -- ante = G.GAME and G.GAME.round_resets and G.GAME.round_resets.ante or 0,

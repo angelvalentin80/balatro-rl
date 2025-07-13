@@ -78,7 +78,7 @@ function ACTIONS.get_available_actions()
 
     for action_name, action_def in pairs(action_registry) do
         if action_def.available_when() then
-            available[ACTION_IDS[action_name]] = true
+            table.insert(available, ACTIONS.get_action_id(action_name))
         end
     end
 
