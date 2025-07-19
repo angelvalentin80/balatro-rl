@@ -55,11 +55,32 @@ Balatro uses numbered states defined in `globals.lua`:
 - `G.GAME` - Main game data structure
 - `G.FUNCS` - Game function callbacks
 
+## Communication Architecture
+
+### Dual Pipe Communication
+The mod uses separate named pipes for request/response communication with the AI:
+- **Request pipe path**: `/tmp/balatro_request` (Balatro writes, AI reads)
+- **Response pipe path**: `/tmp/balatro_response` (AI writes, Balatro reads)
+- **Protocol**: Persistent pipe handles with blocking reads
+- **Flow**: 
+  1. Balatro opens persistent handles to both pipes
+  2. Balatro writes JSON request to request pipe
+  3. AI reads request from request pipe
+  4. AI writes JSON response to response pipe
+  5. Balatro performs blocking read from response pipe
+
+### Benefits of Dual Pipes
+- Clear separation of request/response channels
+- Persistent handles avoid repeated open/close overhead
+- Blocking reads ensure proper synchronization
+- Each pipe has single direction, eliminating read/write conflicts
+
 ## Current Status
 The mod can successfully:
 - Start a run automatically
 - Detect blind selection state
 - Automatically select the next blind
+- Communicate with AI via dual pipe system
 
 ## Communication with Claude
 - Please keep chats as efficient as possible and brief. No fluff talk, just get to the point

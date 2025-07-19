@@ -1,177 +1,190 @@
 """
 Balatro RL Environment
-Wraps the HTTP communication in a gym-like interface for RL training
+Wraps the pipe-based communication with Balatro mod in a standard RL interface.
+This acts as a translator between Balatro's JSON pipe communication and 
+RL libraries that expect gym-style step()/reset() methods.
 """
 
 import numpy as np
 from typing import Dict, Any, Tuple, List, Optional
 import logging
+import gymnasium as gym
+from gymnasium import spaces
+from ..utils.debug import tprint
 
-from ..utils.serialization import GameStateValidator
+from ..utils.communication import BalatroPipeIO
+from .reward import BalatroRewardCalculator
+from ..utils.mappers import BalatroStateMapper, BalatroActionMapper
 
 
-class BalatroEnvironment:
+class BalatroEnv(gym.Env):
     """
-    Gym-like environment interface for Balatro RL training
+    Standard RL Environment wrapper for Balatro
     
-    This class will eventually wrap the HTTP communication
-    and provide a standard RL interface with step(), reset(), etc.
+    Translates between:
+    - Balatro mod's JSON pipe communication (/tmp/balatro_request, /tmp/balatro_response)
+    - Standard RL interface (step, reset, observation spaces)
+    
+    This allows RL libraries like Stable-Baselines3 to train on Balatro
+    without knowing about the underlying pipe communication system.
     """
     
     def __init__(self):
+        super().__init__()
         self.logger = logging.getLogger(__name__)
         self.current_state = None
+        self.prev_state = None
         self.game_over = False
         
-        # TODO: Define action and observation spaces
-        # self.action_space = ...
-        # self.observation_space = ...
-    
-    def reset(self) -> Dict[str, Any]:
-        """Reset the environment for a new episode"""
-        self.current_state = None
-        self.game_over = False
+        # Initialize communication and reward systems
+        self.pipe_io = BalatroPipeIO()
+        self.reward_calculator = BalatroRewardCalculator()
+
+        # Define Gymnasium spaces
+        # Action Spaces; This should describe the type and shape of the action
+        # Constants
+        self.MAX_ACTIONS = 10 
+        action_selection = np.array([self.MAX_ACTIONS])
+        card_indices = np.array([2, 2, 2, 2, 2, 2, 2, 2, 2, 2]) # Handles up to 10 cards in a hand
+        self.action_space = spaces.MultiDiscrete(np.concatenate([
+            action_selection,
+            card_indices
+        ]))
+        ACTION_SLICE_LAYOUT = [
+            ("action_selection", 1),
+            ("card_indices", 10)
+        ]
+        slices = self._build_action_slices(ACTION_SLICE_LAYOUT)
         
-        # TODO: Send reset signal to Balatro mod
-        # This might involve starting a new run
-        
-        return self._get_initial_state()
+        # Observation space: This should describe the type and shape of the observation
+        # Constants
+        self.OBSERVATION_SIZE = 70 # you can get this value by running test_env.py. 
+        self.observation_space = spaces.Box(
+            low=-np.inf, # lowest bound of observation data
+            high=np.inf, # highest bound of observation data
+            shape=(self.OBSERVATION_SIZE,), # Adjust based on actual state size which  This is a 1D array 
+            dtype=np.float32 # Data type of the numbers
+        )
+
+        # Initialize mappers
+        self.state_mapper = BalatroStateMapper(observation_size=self.OBSERVATION_SIZE, max_actions=self.MAX_ACTIONS)
+        self.action_mapper = BalatroActionMapper(action_slices=slices)
     
-    def step(self, action: Dict[str, Any]) -> Tuple[Dict, float, bool, Dict]:
+    def reset(self, seed=None, options=None): #TODO add types
         """
-        Take an action in the environment
+        Reset the environment for a new episode
+        
+        In Balatro context, this means starting a new run.
+        Communicates with Balatro mod via pipes to initiate reset.
+        
+        Returns:
+            Initial observation/game state
+        """
+        self.current_state = None
+        self.prev_state = None
+        self.game_over = False
+        
+        # Reset reward tracking
+        self.reward_calculator.reset()
+        
+        # Wait for initial request from Balatro (game start)
+        initial_request = self.pipe_io.wait_for_request()
+        if not initial_request:
+            raise RuntimeError("Failed to receive initial request from Balatro")
+
+        # Send dummy response to complete hand shake
+        success = self.pipe_io.send_response({"action": "ready"})
+        if not success:
+            raise RuntimeError("Failed to complete handshake")
+         
+        # Process initial state for SB3
+        self.current_state = initial_request
+        initial_observation = self.state_mapper.process_game_state(self.current_state)
+        
+        return initial_observation, {}
+    
+    def step(self, action): #TODO add types
+        """
+        Take an action in the Balatro environment
+        Sends action to Balatro mod via JSON pipe, waits for response,
+        calculates reward, and returns standard RL step format.
         
         Args:
-            action: Action to take
+            action: Action dictionary (e.g., {"action": 1, "params": {...}})
             
         Returns:
-            Tuple of (observation, reward, done, info)
+            Tuple of (observation, reward, done, info) where:
+            - observation: Processed game state for neural network
+            - reward: Calculated reward for this step
+            - done: Whether episode is finished (game over)
+            - info: Additional debug information
         """
-        # TODO: Send action to Balatro via HTTP
-        # TODO: Receive new game state
-        # TODO: Calculate reward
-        # TODO: Check if episode is done
+        # Store previous state for reward calculation
+        self.prev_state = self.current_state
+
+        # Send action response to Balatro mod
+        response_data = self.action_mapper.process_action(rl_action=action)
         
-        observation = self._process_game_state(self.current_state)
-        reward = self._calculate_reward()
-        done = self.game_over
-        info = {}
+        success = self.pipe_io.send_response(response_data)
+        if not success:
+            raise RuntimeError("Failed to send response to Balatro")
         
-        return observation, reward, done, info
-    
-    def _get_initial_state(self) -> Dict[str, Any]:
-        """Get initial game state"""
-        # TODO: Implement
-        return {}
-    
-    def _process_game_state(self, raw_state: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Process raw game state into format suitable for RL agent
+        # Wait for next request with new game state
+        next_request = self.pipe_io.wait_for_request()
+        if not next_request:
+            # If no response, assume game ended
+            self.game_over = True
+            observation = self.state_mapper.process_game_state(self.current_state)
+            reward = 0.0
+            return observation, reward, True, {"timeout": True} #TODO this is a bug we need to return 5 values
         
-        This might involve:
-        - Extracting relevant features
-        - Normalizing values
-        - Converting to numpy arrays
-        """
-        if not raw_state:
-            return {}
+        # Update current state
+        self.current_state = next_request
         
-        # Validate state structure
-        try:
-            GameStateValidator.validate_game_state(raw_state)
-        except ValueError as e:
-            self.logger.error(f"Invalid game state: {e}")
-            return {}
+        # Process new state for SB3
+        observation = self.state_mapper.process_game_state(self.current_state)
         
-        # TODO: Extract and process features
-        processed = {
-            'hand_features': self._extract_hand_features(raw_state.get('hand', {})),
-            'game_features': self._extract_game_features(raw_state),
-            'available_actions': raw_state.get('available_actions', [])
+        # Calculate reward using expert reward calculator
+        reward = self.reward_calculator.calculate_reward(
+            current_state=self.current_state,
+            prev_state=self.prev_state if self.prev_state else {}
+        )
+        
+        # Check if episode is done
+        done = bool(self.current_state.get('game_over', 0)) # TODO send a game_over in our state
+        terminated = done
+        truncated = False  # Not using time limits for now
+        
+        info = {
+            'balatro_state': self.current_state.get('state', 0),
+            'available_actions': next_request.get('available_actions', [])
         }
+        # TODO have a feeling observation is not being return when we run out of actions which causes problems
+        return observation, reward, terminated, truncated, info 
+
+    def cleanup(self):
+        """
+        Clean up environment resources
         
-        return processed
-    
-    def _extract_hand_features(self, hand: Dict[str, Any]) -> np.ndarray:
-        """Extract numerical features from hand"""
-        # TODO: Convert hand cards to numerical representation
-        # This might include:
-        # - Card values (2-14 for 2-A)
-        # - Suits (0-3 for different suits)
-        # - Special abilities/bonuses
+        Call this when shutting down to clean up pipe communication.
+        """
+        self.pipe_io.cleanup()
+
+    @staticmethod
+    def _build_action_slices(layout: List[Tuple[str, int]]) -> Dict[str, slice]:
+        """
+        Create slices for our actions so that we can precisely extract the
+        right params to send over to balatro
         
-        cards = hand.get('cards', [])
-        features = []
-        
-        for card in cards:
-            # Extract card features
-            suit_encoding = self._encode_suit(card.get('suit', ''))
-            value_encoding = self._encode_value(card.get('base', {}).get('value', ''))
-            nominal = card.get('base', {}).get('nominal', 0)
-            
-            # Add ability features
-            ability = card.get('ability', {})
-            ability_features = [
-                ability.get('t_chips', 0),
-                ability.get('t_mult', 0),
-                ability.get('x_mult', 1),
-                ability.get('mult', 0)
-            ]
-            
-            card_features = [suit_encoding, value_encoding, nominal] + ability_features
-            features.extend(card_features)
-        
-        # Pad or truncate to fixed size (e.g., 8 cards max * 7 features each)
-        max_cards = 8
-        features_per_card = 7
-        
-        if len(features) < max_cards * features_per_card:
-            features.extend([0] * (max_cards * features_per_card - len(features)))
-        else:
-            features = features[:max_cards * features_per_card]
-        
-        return np.array(features, dtype=np.float32)
-    
-    def _extract_game_features(self, state: Dict[str, Any]) -> np.ndarray:
-        """Extract game-level features"""
-        # TODO: Extract features like:
-        # - Current chips
-        # - Target chips
-        # - Money
-        # - Round/ante
-        # - Discards remaining
-        # - Hands remaining
-        
-        features = [
-            state.get('state', 0),  # Game state
-            len(state.get('available_actions', [])),  # Number of available actions
-        ]
-        
-        return np.array(features, dtype=np.float32)
-    
-    def _encode_suit(self, suit: str) -> int:
-        """Encode suit as integer"""
-        suit_map = {'Hearts': 0, 'Diamonds': 1, 'Clubs': 2, 'Spades': 3}
-        return suit_map.get(suit, 0)
-    
-    def _encode_value(self, value: str) -> int:
-        """Encode card value as integer"""
-        if value.isdigit():
-            return int(value)
-        
-        value_map = {
-            'Jack': 11, 'Queen': 12, 'King': 13, 'Ace': 14,
-            'A': 14, 'K': 13, 'Q': 12, 'J': 11
-        }
-        return value_map.get(value, 0)
-    
-    def _calculate_reward(self) -> float:
-        """Calculate reward for current state"""
-        # TODO: Implement reward calculation
-        # This might be based on:
-        # - Chips scored
-        # - Blind completion
-        # - Round progression
-        # - Final score
-        
-        return 0.0
+        Args:
+            layout: Our ACTION_SLICE_LAYOUT that contains action name and size
+        Return:
+            A dictionary containing a key being our action space slice name, and  
+            the slice 
+        """
+        slices = {}
+        start = 0
+        for action_name, size in layout:
+            slices[action_name] = slice(start, start + size)
+            start += size
+        return slices

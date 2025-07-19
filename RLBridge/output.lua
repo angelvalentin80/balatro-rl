@@ -4,15 +4,20 @@
 
 local O = {}
 
-local actions = require("actions")
-
 --- Get comprehensive game state for AI
 --- Collects all relevant game information into a structured format
 --- @return table Complete game state data for AI processing
 function O.get_game_state()
+    -- Calculate game_over
+    local game_over = 0
+    if G.STATE == G.STATES.GAME_OVER then
+        game_over = 1
+    end
+
     return {
         -- Basic state info
         state = G.STATE,
+        game_over = game_over,
 
         -- Game progression
         -- round = G.GAME and G.GAME.round or 0,
@@ -27,16 +32,9 @@ function O.get_game_state()
         -- Hand info (if applicable)
         hand = O.get_hand_info(),
 
-        -- -- Jokers info
-        -- jokers = O.get_jokers_info(),
-
-        -- -- Chips/score info
-        -- chips = G.GAME and G.GAME.chips or 0,
-        -- chip_target = G.GAME and G.GAME.blind and G.GAME.blind.chips or 0,
-
-        -- -- Action feedback for AI
-        -- last_action_success = true, -- Did last action work?
-        -- last_action_error = nil,    -- What went wrong?
+        -- Chips/score info
+        chips = G.GAME and G.GAME.chips or 0,
+        chip_target = G.GAME and G.GAME.blind and G.GAME.blind.chips or 0,
     }
 end
 

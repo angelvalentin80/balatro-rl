@@ -15,6 +15,7 @@ G.SETTINGS.reduced_motion = true
 function INIT.start_run()
     print("Starting balatro run")
 
+    
     -- Initialize AI system
     local ai = require("ai")
     ai.init()
