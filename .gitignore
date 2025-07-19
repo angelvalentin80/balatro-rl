@@ -56,13 +56,17 @@ logs/
 *.temp
 .cache/
 
-# Model checkpoints and training artifacts
+# Training artifacts (generated during RL training sessions)
+models/
+tensorboard_logs/
+training.log
+training_monitor.csv
+
+# Other ML artifacts
 *.pth
 *.pt
 *.ckpt
 checkpoints/
-models/
-tensorboard_logs/
 wandb/
 
 # Large reference files (don't commit decompiled game source)

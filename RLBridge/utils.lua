@@ -46,7 +46,7 @@ end
 --- Maps numeric state IDs to their string representations for debugging
 --- @param state_id number Numeric state identifier
 --- @return string Human-readable state name or "UNKNOWN_STATE"
-function UTIL.state_name(state_id)
+function UTIL.get_state_name(state_id)
     for key, value in pairs(G.STATES) do
         if value == state_id then
             return key
@@ -131,6 +131,24 @@ function UTIL.get_action_names(available_actions)
         table.insert(names, action.get_action_name(action_id))
     end
     return names
+end
+
+function UTIL.contains(tbl, val)
+    for x, _ in ipairs(tbl) do
+        if tbl[x] == val then
+            return true
+        end
+    end
+    return false
+end
+
+--- Get current timestamp as formatted string
+--- Returns current time in HH:MM:SS.mmm format for debugging
+--- @return string Formatted timestamp
+function UTIL.get_timestamp()
+    local time = os.time()
+    local ms = (os.clock() % 1) * 1000
+    return os.date("%H:%M:%S", time) .. string.format(".%03d", ms)
 end
 
 return UTIL

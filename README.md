@@ -28,7 +28,12 @@ Made a symlink -> ln -s ~/dev/balatro-rl/RLBridge /mnt/gamerlinuxssd/SteamLibrar
 - [ ] Training loop integration
 
 ### Game Features  
+- [ ] Always have restart_run as an action option assuming the game is ongoing
 - [ ] Blind selection choices (skip vs select)
 - [ ] Extended game state (money, discards, hands played)
 - [ ] Shop interactions
 - [ ] Joker management
+
+### RL Enhancements
+- [ ] Add a "Replay System" to analyze successful actions. For example, save seed, have an action log for reproduction etc 
+Can probably do this by adding it before the game is reset like a check on what criteria I want to save for, and save
