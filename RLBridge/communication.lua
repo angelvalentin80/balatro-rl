@@ -77,7 +77,7 @@ function COMM.request_action(game_state, available_actions, retry_count)
         retry_count = retry_count,
     }
 
-    utils.log_comm(utils.get_timestamp() .. "Sending action request for state: " ..
+    utils.log_comm(utils.get_timestamp() .. " Sending action request for state: " ..
         tostring(game_state.state) .. " (" .. utils.get_state_name(game_state.state) .. ")")
 
     -- Encode request as JSON
@@ -90,10 +90,8 @@ function COMM.request_action(game_state, available_actions, retry_count)
     -- Write request to persistent handle
     request_handle:write(json_data .. "\n")
     request_handle:flush() -- Ensure data is sent immediately
-    utils.log_comm(utils.get_timestamp() .. "Request sent...")
 
     -- Read response from persistent handle
-    utils.log_comm(utils.get_timestamp() .. "about to read the respones")
     local response_json = response_handle:read("*line")
 
     if not response_json or response_json == "" then

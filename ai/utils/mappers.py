@@ -7,10 +7,68 @@ This module handles the two-way data transformation:
 """
 
 import numpy as np
-import time
 from typing import Dict, List, Any
 from ..utils.validation import GameStateValidator, ResponseValidator
 import logging
+
+
+def make_onehot(value: int, num_classes: int) -> List[float]:
+    """
+    Create one-hot encoding for categorical values.
+    
+    Args:
+        value: The category index (0-based)
+        num_classes: Total number of possible categories
+        
+    Returns:
+        One-hot encoded list where only the value position is 1.0
+        
+    Example:
+        make_onehot(2, 5) -> [0.0, 0.0, 1.0, 0.0, 0.0]
+    """
+    onehot = [0.0] * num_classes
+    if 0 <= value < num_classes:
+        onehot[value] = 1.0
+    return onehot
+
+
+def make_mask(available_items: List[int], total_slots: int) -> List[float]:
+    """
+    Create binary mask for available items/actions.
+    
+    Args:
+        available_items: List of available indices
+        total_slots: Total number of possible slots
+        
+    Returns:
+        Binary mask where available positions are 1.0
+        
+    Example:
+        make_mask([1, 3, 5], 6) -> [0.0, 1.0, 0.0, 1.0, 0.0, 1.0]
+    """
+    mask = [0.0] * total_slots
+    for item in available_items:
+        if 0 <= item < total_slots:
+            mask[item] = 1.0
+    return mask
+
+
+def normalize(value: float, max_value: float) -> float:
+    """
+    Normalize a value to 0-1 range.
+    
+    Args:
+        value: Value to normalize
+        max_value: Maximum possible value for scaling
+        
+    Returns:
+        Normalized value between 0.0 and 1.0
+        
+    Example:
+        normalize(1500, 3000) -> 0.5  # Halfway to max
+        normalize(50, 100) -> 0.5     # Also halfway
+    """
+    return value / max_value if max_value > 0 else 0.0
 
 
 
@@ -33,7 +91,6 @@ class BalatroStateMapper:
         # GameStateValidator
         self.game_state_validator = GameStateValidator()
 
-    #TODO review Might be something wrong here
     def process_game_state(self, raw_state: Dict[str, Any] | None) -> np.ndarray:
         """
         Convert Balatro's raw JSON game state into neural network input format
@@ -44,39 +101,37 @@ class BalatroStateMapper:
             raw_state: Raw game state from Balatro mod JSON
             
         Returns:
-            Processed state suitable for RL training
+            Processed numpy array state suitable for RL training
         """
+        # Handle gracefully 
         if not raw_state:
-            return np.zeros(self.observation_size, dtype=np.float32) # TODO maybe raise error?
+            return np.zeros(self.observation_size, dtype=np.float32)
         
         # Validate game state request 
         try:
             self.game_state_validator.validate_game_state(raw_state)
         except ValueError as e:
             self.logger.error(f"Invalid game state: {e}")
+
+        features = []
         
-        hand_features = self._extract_hand_features(raw_state.get('hand', {}))
-        game_features = self._extract_game_features(raw_state)
-        available_actions = self._extract_available_actions(raw_state.get('available_actions', []))
-        chips = self._extract_chip_features(raw_state)
-        # TODO extract state
-        
-        return np.concatenate([hand_features, game_features, available_actions, chips])
+        features.extend(self._extract_game_features(raw_state.get('game_state', {}))) #TODO verifying
+        features.extend(self._extract_available_actions(raw_state.get('available_actions', [])))
+        features.append(raw_state.get('retry_count', 0.0))
+
+        return np.array(features, dtype=np.float32)
     
-    def _extract_available_actions(self, available_actions: List[int]) -> np.ndarray:
+    def _extract_available_actions(self, available_actions: List[int]) -> List[float]:
         """
-        Convert available actions into a np array
+        Convert available actions into a fixed-size mask
         Args:
             available_actions: Available actions list from Balatro game state
         Returns:
-            Fixed-size numpy array of hand features
+            Fixed-size list of available action features
         """
-        mask = np.zeros(self.max_actions, dtype=np.float32)
-        for action_id in available_actions:
-            mask[action_id] = 1.0
-        return mask
+        return make_mask(available_actions, self.max_actions)
     
-    def _extract_hand_features(self, hand: Dict[str, Any]) -> np.ndarray:
+    def _extract_hand_features(self, hand: Dict[str, Any]) -> List[float]:
         """
         Convert Balatro hand data into numerical features for neural network
         
@@ -90,44 +145,50 @@ class BalatroStateMapper:
             hand: Hand dictionary from Balatro game state
             
         Returns:
-            Fixed-size numpy array of hand features
+            Fixed-size list of hand features
         """
-        
-        cards = hand.get('cards', [])
         features = []
         
+        cards = hand.get('cards', [])
+
+
+        features.append(float(hand.get('size', 0)))
+        features.append(float(hand.get('highlighted_count', 0)))
+        
+        
         for card in cards:
-            # Extract card features
-            suit_encoding = self._encode_suit(card.get('suit', ''))
-            value_encoding = self._encode_value(card.get('base', {}).get('value', ''))
-            nominal = card.get('base', {}).get('nominal', 0)
-            
-            # Add ability features
-            ability = card.get('ability', {})
-            ability_features = [
-                ability.get('t_chips', 0),
-                ability.get('t_mult', 0),
-                ability.get('x_mult', 1),
-                ability.get('mult', 0)
-            ]
-            
-            card_features = [suit_encoding, value_encoding, nominal] + ability_features
+            card_features = []
+            card_features.append(float(card.get('highlighted', False)))
+            suits_mapping = {"Hearts": 0, "Diamonds": 1, "Spades": 2, "Clubs": 3}
+            suit = card.get('suit', 'Unknown')
+            card_features.extend(make_onehot(suits_mapping.get(suit, 4), 5))
+            card_features.append(float(card.get('debuff', False)))
+            card_features.append(float(card.get('cost', 0)))
+
+            # Extract base 
+            base = card.get('base', {})
+            card_features.append(float(base.get('nominal', 0)))
+            values_mapping = {
+                '2': 0, '3': 1, '4': 2, '5': 3, '6': 4, '7': 5, '8': 6, '9': 7, '10': 8,
+                'Jack': 9, 'Queen': 10, 'King': 11, 'Ace': 12
+            }
+            value = base.get('value')
+            card_features.extend(make_onehot(values_mapping.get(value, 13), 14))
+
             features.extend(card_features)
         
-        # Pad or truncate to fixed size (e.g., 8 cards max * 7 features each)
-        # TODO hand.get('size')
-        # TODO hand.get('highlighted_count')
-        max_cards = 8
-        features_per_card = 7
+        # Pad or truncate to fixed size 
+        max_cards = 15
+        features_per_card = 23  # 1+5+1+1+1+14 = highlighted+suit_onehot+debuff+cost+nominal+value_onehot
         
         if len(features) < max_cards * features_per_card:
             features.extend([0] * (max_cards * features_per_card - len(features)))
         else:
             features = features[:max_cards * features_per_card]
         
-        return np.array(features, dtype=np.float32)
+        return features
     
-    def _extract_game_features(self, state: Dict[str, Any]) -> np.ndarray:
+    def _extract_game_features(self, state: Dict[str, Any]) -> List[float]:
         """
         Extract numerical game-level features from Balatro state
         
@@ -141,50 +202,53 @@ class BalatroStateMapper:
             state: Full Balatro game state dictionary
             
         Returns:
-            Numpy array of normalized game features
+            List of normalized game features
         """
+        features = []
+        features.extend(self._extract_blind_features(state.get('blind', {})))
+        features.extend(self._extract_ante_features(state.get('ante', {})))
+        features.extend(make_onehot(state.get('state', 0), 20))
+        features.append(state.get('chips', 0))
+        features.extend(self._extract_hand_features(state.get('hand', {})))
+        features.append(state.get('game_over', 0))
+
+        return features
+
+    def _extract_ante_features(self, ante: Dict[str, Any]) -> List[float]:
+        """
+        Extract information relating to antes
         
-        features = [
-            state.get('state', 0),  # Game state
-            len(state.get('available_actions', [])),  # Number of available actions
-        ]
-        
-        return np.array(features, dtype=np.float32)
-    
-    def _extract_chip_features(self, state: Dict[str, Any]) -> np.ndarray:
+        Args:
+            ante: Ante state inside of the game_state dictionary
+        Returns:
+            List of ante features
+        """
+        features = []
+        features.append(float(ante.get('current_ante', 0)))
+        features.append(float(ante.get('win_ante', 0)))
+        return features
+
+    def _extract_blind_features(self, blind: Dict[str, Any]) -> List[float]:
         """
         Extract information relating to chips
 
         Args:
-            state: Full Balatro game state dictionary
+            blind: Blind state inside of the game_state dictionary
         Returns:
-            Numpy array of normalized chip features
+            List of blind features
         """
-        features = [
-            state.get('chips', 0),
-            state.get('chip_target', 0)
-        ]
+        features = []
+        features.append(float(blind.get('dollars', 0.0)))
+        features.append(float(blind.get('defeated', False)))
+        type_mapping = {"Small": 0, "Big": 1, "Boss": 2}
+        blind_type = blind.get('type', 'Unknown')
+        type_index = type_mapping.get(blind_type, 3)
+        features.extend(make_onehot(type_index, 4))
+        features.append(float(blind.get('chips', 0.0)))
+        features.append(float(blind.get('blind_ante', 0.0)))
 
-        return np.array(features, dtype=np.float32)
-
-    def _encode_suit(self, suit: str) -> int:
-        """Encode suit as integer"""
-        suit_map = {'Hearts': 0, 'Diamonds': 1, 'Clubs': 2, 'Spades': 3}
-        return suit_map.get(suit, 0)
+        return features
     
-    def _encode_value(self, value: str) -> int:
-        """Encode card value as integer"""
-        if value.isdigit():
-            return int(value)
-        
-        value_map = {
-            'Jack': 11, 'Queen': 12, 'King': 13, 'Ace': 14,
-            'A': 14, 'K': 13, 'Q': 12, 'J': 11
-        }
-        return value_map.get(value, 0)
-
-
-
 class BalatroActionMapper:
     """
     Converts RL actions to Balatro command JSON.

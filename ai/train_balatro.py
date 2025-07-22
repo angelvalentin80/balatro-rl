@@ -236,20 +236,13 @@ if __name__ == "__main__":
     Path(".models").mkdir(exist_ok=True)
     Path(".tensorboard_logs").mkdir(exist_ok=True)
     
-    # We'll let BalatroEnv create the pipes when needed
-    print("🔧 Pipe communication will be initialized with environment...")
-    
     # Train the agent
     print("\n🎮 Starting Balatro RL Training!")
     print("Setup steps:")
     print("1. ✅ Balatro is running with RLBridge mod")
     print("2. ✅ Balatro is in menu state")
-    print("3. Press Enter below to start training")
-    print("4. When prompted, press 'R' in Balatro within 3 seconds")
-    print("\n📡 Training will create pipes and connect automatically!")
-    print()
-    
-    input("Press Enter to start training (then you'll have 3 seconds to press 'R' in Balatro)...")
+
+    input("Press Enter to start training then press 'R' in Balatro)...")
     
     try:
         model = train_agent(

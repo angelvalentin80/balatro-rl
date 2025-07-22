@@ -9,7 +9,8 @@ that teach the AI what constitutes good vs bad Balatro gameplay.
 """
 
 from typing import Dict, Any
-import numpy as np
+
+from numpy import inner
 
 class BalatroRewardCalculator:
     """
@@ -27,6 +28,7 @@ class BalatroRewardCalculator:
     
     def __init__(self):
         self.chips = 0
+        self.ante = 0
         
     def calculate_reward(self, current_state: Dict[str, Any], 
                         prev_state: Dict[str, Any] = None) -> float:
@@ -45,26 +47,36 @@ class BalatroRewardCalculator:
             Float reward value (positive = good, negative = bad, zero = neutral)
         """
         reward = 0.0
+
+        inner_game_state = current_state.get('game_state', {})
         
         # Extract relevant metrics
-        current_chips = current_state.get('chips', 0)
-        game_over = current_state.get('game_over', False) #TODO fix
+        current_chips = inner_game_state.get('chips', 0)
+        game_over = inner_game_state.get('game_over', 0)
+        # Ante
+        ante_info = inner_game_state.get('ante', {})
+        current_ante = ante_info.get('current_ante', 0)
+        win_ante = ante_info.get('win_ante', 0)
         
-        # Score-based rewards
+        # Chip-based rewards
         chip_diff = current_chips - self.chips
         if chip_diff > 0:
-            reward += chip_diff * 0.001  # Small reward for score increases
+            reward += chip_diff * 0.001  # Small reward for chip increases
+
+        # Ante based rewards
+        ante_diff = current_ante - self.ante
+        if ante_diff > 0:
+            reward += ante_diff * 50.0  # Large reward for completing antes
         
         # Game over penalty
-        if game_over:
+        if game_over == 1:
             # Penalty based on how early the game ended
-            # max_ante = 8  # Typical max ante in Balatro
-            # completion_ratio = current_ante / max_ante
-            # reward += completion_ratio * 100.0  # Reward based on progress
-            reward -= 10 #TODO keeping this simple for now
+            completion_ratio = current_ante / win_ante
+            reward += completion_ratio * 100.0  # Reward based on progress
             
         # Update previous state
         self.chips = current_chips
+        self.ante = current_ante
         
         return reward
     
@@ -76,40 +88,5 @@ class BalatroRewardCalculator:
         previous state tracking variables.
         """
         self.chips = 0
+        self.ante = 0
     
-    def get_shaped_reward(self, state: Dict[str, Any], action: str) -> float:
-        """
-        Calculate action-specific reward shaping
-        
-        Provides small rewards/penalties for specific actions to guide
-        AI behavior beyond just game state changes. Use sparingly to
-        avoid overriding the main reward signal.
-        
-        Args:
-            state: Current game state when action was taken
-            action: Action that was taken (for action-specific rewards)
-            
-        Returns:
-            Small shaped reward value (usually -1 to +1)
-        """
-        # TODO look at this this could help but currently not in a working state
-        reward = 0.0
-        
-        # Action-specific rewards
-        if action == "play_hand":
-            # Small reward for playing hands (encourages action)
-            reward += 0.1
-            
-        elif action == "discard":
-            # Very small reward for discarding (necessary but not preferred)
-            reward += 0.01
-            
-        elif action == "skip_blind":
-            # Penalty for skipping (unless justified)
-            reward -= 1.0
-            
-        elif action == "buy_item":
-            # Neutral - depends on if it's a good purchase
-            reward += 0.0
-            
-        return reward

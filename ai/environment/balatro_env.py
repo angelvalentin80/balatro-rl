@@ -58,7 +58,7 @@ class BalatroEnv(gym.Env):
         
         # Observation space: This should describe the type and shape of the observation
         # Constants
-        self.OBSERVATION_SIZE = 70 # you can get this value by running test_env.py. 
+        self.OBSERVATION_SIZE = 388 # you can get this value by running test_env.py. 
         self.observation_space = spaces.Box(
             low=-np.inf, # lowest bound of observation data
             high=np.inf, # highest bound of observation data
@@ -136,7 +136,7 @@ class BalatroEnv(gym.Env):
             self.game_over = True
             observation = self.state_mapper.process_game_state(self.current_state)
             reward = 0.0
-            return observation, reward, True, {"timeout": True} #TODO this is a bug we need to return 5 values
+            return observation, reward, True, False, {"timeout": True}
         
         # Update current state
         self.current_state = next_request
