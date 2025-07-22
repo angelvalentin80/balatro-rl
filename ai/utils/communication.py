@@ -107,7 +107,7 @@ class BalatroPipeIO:
                 return None
             
             request_data = json.loads(request_line)
-            self.logger.info(f"📥 RECEIVED REQUEST: {request_line}...")  # Show first 100 chars
+            self.logger.debug(f"📥 RECEIVED REQUEST: {request_line}")
             return request_data
             
         except json.JSONDecodeError as e:
@@ -139,7 +139,7 @@ class BalatroPipeIO:
             self.response_handle.write('\n')  # Important: newline for pipe communication
             self.response_handle.flush()  # Force write to pipe immediately
             
-            self.logger.info(f"📤 SENT RESPONSE: {json.dumps(response_data)}")
+            self.logger.debug(f"📤 SENT RESPONSE: {json.dumps(response_data)}")
             return True
             
         except Exception as e:

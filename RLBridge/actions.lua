@@ -10,18 +10,27 @@ local ACTIONS = {}
 ACTIONS.START_RUN = 1
 ACTIONS.SELECT_BLIND = 2
 ACTIONS.SELECT_HAND = 3
+ACTIONS.PLAY_HAND = 4
+ACTIONS.DISCARD_HAND = 5
+ACTIONS.RESTART_RUN = 6
 
 -- Action mapping tables
 local ACTION_IDS = {
     start_run = ACTIONS.START_RUN,
     select_blind = ACTIONS.SELECT_BLIND,
-    select_hand = ACTIONS.SELECT_HAND
+    select_hand = ACTIONS.SELECT_HAND,
+    play_hand = ACTIONS.PLAY_HAND,
+    discard_hand = ACTIONS.DISCARD_HAND,
+    restart_run = ACTIONS.RESTART_RUN,
 }
 
 local ID_TO_ACTION = {
     [ACTIONS.START_RUN] = "start_run",
     [ACTIONS.SELECT_BLIND] = "select_blind",
-    [ACTIONS.SELECT_HAND] = "select_hand"
+    [ACTIONS.SELECT_HAND] = "select_hand",
+    [ACTIONS.PLAY_HAND] = "play_hand",
+    [ACTIONS.DISCARD_HAND] = "discard_hand",
+    [ACTIONS.RESTART_RUN] = "restart_run",
 }
 
 -- Centralized action state tracking
@@ -60,14 +69,44 @@ local action_registry = {
     },
     select_hand = {
         execute = function(params)
-            return input.select_hand(params.card_indices)
+            return input.select_hand(params)
         end,
         available_when = function()
-            return G.STATE == G.STATES.SELECTING_HAND and G.hand and G.hand.cards and
-                not action_state
-                .select_hand
+            return G.STATE == G.STATES.SELECTING_HAND and G.hand and G.hand.cards and #G.hand.highlighted <= 0 and
+                utils.is_game_ready_for_action() and
+                not action_state.select_hand
         end,
-    }
+    },
+    play_hand = {
+        execute = function(params)
+            ACTIONS.reset_state()
+            return input.play_hand()
+        end,
+        available_when = function()
+            return G.STATE == G.STATES.SELECTING_HAND and G.hand and G.hand.cards and G.FUNCS.can_play and
+                #G.hand.highlighted > 0 and utils.is_game_ready_for_action() and
+                not action_state.play_hand
+        end,
+    },
+    discard_hand = {
+        execute = function(params)
+            ACTIONS.reset_state()
+            return input.discard_hand()
+        end,
+        available_when = function()
+            return G.STATE == G.STATES.SELECTING_HAND and G.hand and G.hand.cards and G.FUNCS.can_discard and
+                #G.hand.highlighted > 0 and utils.is_game_ready_for_action() and
+                not action_state.discard_hand
+        end,
+    },
+    restart_run = { -- TODO perhaps we have to instead of start_run actually let them know that the game is over by setting it in our state
+        execute = function(params)
+            return input.start_run()
+        end,
+        available_when = function()
+            return G.STATE == G.STATES.GAME_OVER and not action_state.restart_run
+        end,
+    },
 }
 
 --- Get all currently available actions
@@ -104,6 +143,10 @@ function ACTIONS.execute_action(action_id, params)
     if not action_name then
         utils.log_input("ERROR: Invalid action ID: " .. tostring(action_id))
         return { success = false, error = "Invalid action ID" }
+    end
+    if not params then
+        utils.log_input("ERROR: Invalid Params: " .. tostring(params))
+        return { success = false, error = "Invalid params" }
     end
 
     utils.log_input("Executing action: " .. action_name)

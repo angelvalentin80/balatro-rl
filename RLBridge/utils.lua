@@ -127,7 +127,7 @@ end
 function UTIL.get_action_names(available_actions)
     local action = require("actions")
     local names = {}
-    for action_id, _ in pairs(available_actions) do
+    for _, action_id in ipairs(available_actions) do
         table.insert(names, action.get_action_name(action_id))
     end
     return names
@@ -149,6 +149,34 @@ function UTIL.get_timestamp()
     local time = os.time()
     local ms = (os.clock() % 1) * 1000
     return os.date("%H:%M:%S", time) .. string.format(".%03d", ms)
+end
+
+--- Check if the game is ready to accept actions (no animations/blocking events)
+--- Uses Balatro's event manager to determine if animations are playing
+--- @return boolean True if ready for actions, false if animations are playing
+function UTIL.is_game_ready_for_action()
+    -- Check if game is paused
+    if G.SETTINGS and G.SETTINGS.paused then
+        return false
+    end
+    
+    -- Check if there are blocking events in the queue
+    if G.E_MANAGER and G.E_MANAGER.queues then
+        for queue_name, queue in pairs(G.E_MANAGER.queues) do
+            for _, event in ipairs(queue) do
+                if event.blocking and not event.complete then
+                    return false
+                end
+            end
+        end
+    end
+    
+    -- Check if state transition is complete
+    if G.STATE_COMPLETE == false then
+        return false
+    end
+    
+    return true
 end
 
 return UTIL

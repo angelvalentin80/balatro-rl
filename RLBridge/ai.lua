@@ -148,12 +148,12 @@ end
 --- @param actions table Available actions table
 --- @return string Hash representing available actions
 function AI.hash_actions(actions)
-    local action_names = {}
-    for action_name, _ in pairs(actions) do
-        table.insert(action_names, action_name)
+    local action_ids = {}
+    for _, id in ipairs(actions) do
+        table.insert(action_ids, id)
     end
-    table.sort(action_names)
-    return table.concat(action_names, ",")
+    table.sort(action_ids)
+    return table.concat(action_ids, ",")
 end
 
 return AI

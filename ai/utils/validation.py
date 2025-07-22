@@ -5,6 +5,8 @@ Validates game state structure and content
 
 from typing import Dict, Any, List
 
+from numpy import inner
+
 
 
 class GameStateValidator:
@@ -23,27 +25,68 @@ class GameStateValidator:
     def validate_game_state(game_state: Dict[str, Any]) -> bool:
         """Validate that game state has required fields"""
         required_fields = ['game_state', 'available_actions', 'retry_count']
-        # TODO we can add more validations as needed like ensuring available_actions is a list and stuff
-        # TODO game_over might be a validation
-        # TODO validate chips for rewards
         
         for field in required_fields:
-            if field not in game_state:
-                raise ValueError(f"Missing required field: {field}")
+            assert field in game_state, f"Missing required field: {field}"
+
+        # Validate
+        inner_game_state = game_state.get("game_state")
+        assert isinstance(inner_game_state, dict), "game_state must be a dictionary"
+        available_actions = game_state.get("available_actions")
+        assert isinstance(available_actions, list), "available_actions must be a list"
+        retry_count = game_state.get("retry_count")
+        assert isinstance(retry_count, int), "retry_count must be an integer"
+
+        GameStateValidator._validate_inner_game_state(inner_game_state)
         
-        # Validate hand structure if present
+        return True
+
+    @staticmethod
+    def _validate_inner_game_state(game_state: Dict[str, Any]) -> bool:
+        """
+        Validate the inner game state fields. We call it inner game state because
+        this is the actual game loop in the game, meanwhile normal game_state
+        deals with things outside of the game like whether we are in the main menu
+        etc
+        """
+        # Conditional validations in game_state
         if 'hand' in game_state:
             GameStateValidator._validate_hand(game_state['hand'])
+        if 'blind' in game_state:
+            GameStateValidator._validate_blind(game_state['blind'])
+        if 'ante' in game_state:
+            GameStateValidator._validate_ante(game_state['ante'])
+        if 'game_over' in game_state:
+            assert game_state["game_over"] in [0, 1]
+        if 'state' in game_state:
+            assert isinstance(game_state["state"], int)
 
         return True
-    
+
+    @staticmethod
+    def _validate_ante(ante: Dict[str, Any]) -> bool:
+        """Validate ante structure"""
+        required_fields = ["current_ante", "win_ante"]
+        for field in required_fields:
+            assert field in ante, f"Missing required field: {field}"
+        return True
+
+    @staticmethod
+    def _validate_blind(blind: Dict[str, Any]) -> bool:
+        """Validate ante structure"""
+        required_fields = ["dollars", "defeated", "type", "chips", "blind_ante"]
+        for field in required_fields:
+            assert field in blind, f"Missing required field: {field}"
+        return True
+
     @staticmethod
     def _validate_hand(hand: Dict[str, Any]) -> bool:
         """Validate hand structure"""
-        if not isinstance(hand, dict):
-            raise ValueError("Hand must be a dictionary")
-        
-        if 'cards' in hand and not isinstance(hand['cards'], list):
+        required_fields = ["size", "cards", "highlighted_count"]
+        for field in required_fields:
+            assert field in hand, f"Missing required field: {field}"
+
+        if not isinstance(hand['cards'], list):
             raise ValueError("Hand cards must be a list")
         
         # Validate each card
@@ -55,17 +98,15 @@ class GameStateValidator:
     @staticmethod
     def _validate_card(card: Dict[str, Any], index: int) -> bool:
         """Validate individual card structure"""
-        required_fields = ['suit', 'base']
+        required_fields = ['suit', 'base', 'highlighted', 'debuff']
         
         for field in required_fields:
-            if field not in card:
-                raise ValueError(f"Card {index} missing required field: {field}")
+            assert field in card, f"Card {index} missing required field: {field}"
         
         # Validate base structure
-        if 'base' in card:
-            base = card['base']
-            if 'value' not in base or 'nominal' not in base:
-                raise ValueError(f"Card {index} base missing value or nominal")
+        base = card['base']
+        if 'value' not in base or 'nominal' not in base:
+            raise ValueError(f"Card {index} base missing value or nominal")
         
         return True
 
@@ -82,8 +123,10 @@ class ResponseValidator:
 
     @staticmethod
     def validate_response(response: Dict[str, Any]):
-        required_fields = ["action"]
+        required_fields = ["action", "params"]
         for field in required_fields:
-            if field not in response:
-                raise ValueError(f"Missing required field: {field}")
+            assert field in response, f"Missing required field: {field}"
+
+        assert isinstance(response["action"], int)
+        assert isinstance(response["params"], list)
 
