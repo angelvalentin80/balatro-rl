@@ -99,7 +99,7 @@ local action_registry = {
                 not action_state.discard_hand
         end,
     },
-    restart_run = { -- TODO perhaps we have to instead of start_run actually let them know that the game is over by setting it in our state
+    restart_run = {
         execute = function(params)
             return input.start_run()
         end,
