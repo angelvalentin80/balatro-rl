@@ -115,7 +115,7 @@ class BalatroStateMapper:
 
         features = []
         
-        features.extend(self._extract_game_features(raw_state.get('game_state', {}))) #TODO verifying
+        features.extend(self._extract_game_features(raw_state.get('game_state', {})))
         features.extend(self._extract_available_actions(raw_state.get('available_actions', [])))
         features.append(raw_state.get('retry_count', 0.0))
 
@@ -206,6 +206,7 @@ class BalatroStateMapper:
         """
         features = []
         features.extend(self._extract_blind_features(state.get('blind', {})))
+        features.extend(self._extract_round_features(state.get('round', {})))
         features.extend(self._extract_ante_features(state.get('ante', {})))
         features.extend(make_onehot(state.get('state', 0), 20))
         features.append(state.get('chips', 0))
@@ -227,6 +228,21 @@ class BalatroStateMapper:
         features.append(float(ante.get('current_ante', 0)))
         features.append(float(ante.get('win_ante', 0)))
         return features
+    
+    def _extract_round_features(self, round: Dict[str, Any]) -> List[float]:
+        """
+        Extract information relating to rounds 
+        
+        Args:
+            round: Round state inside of the game_state dictionary
+        Returns:
+            List of round features
+        """
+        features = []
+        features.append(float(round.get('hands_left', 0)))
+        features.append(float(round.get('discards_left', 0)))
+        return features
+
 
     def _extract_blind_features(self, blind: Dict[str, Any]) -> List[float]:
         """

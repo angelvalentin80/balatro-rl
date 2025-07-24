@@ -246,7 +246,7 @@ if __name__ == "__main__":
     
     try:
         model = train_agent(
-            total_timesteps=10000,  # Start small for testing
+            total_timesteps=100000,
             algorithm="PPO",  # PPO supports MultiDiscrete actions
             save_path="./models/balatro_trained"
         )
