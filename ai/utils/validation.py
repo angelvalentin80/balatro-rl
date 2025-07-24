@@ -17,7 +17,7 @@ class GameStateValidator:
     {
         game_state: Dict, # The whole game state table 
         available_actions: List, # The available actions all as integers
-        retry_count: int, # TODO update observation space. this is to handle retries if AI fails
+        retry_count: int, This is to handle retries if AI fails
     }
     """
     
@@ -50,16 +50,12 @@ class GameStateValidator:
         etc
         """
         # Conditional validations in game_state
-        if 'hand' in game_state:
-            GameStateValidator._validate_hand(game_state['hand'])
-        if 'blind' in game_state:
-            GameStateValidator._validate_blind(game_state['blind'])
-        if 'ante' in game_state:
-            GameStateValidator._validate_ante(game_state['ante'])
-        if 'game_over' in game_state:
-            assert game_state["game_over"] in [0, 1]
-        if 'state' in game_state:
-            assert isinstance(game_state["state"], int)
+        GameStateValidator._validate_hand(game_state['hand'])
+        GameStateValidator._validate_round(game_state['round'])
+        GameStateValidator._validate_blind(game_state['blind'])
+        GameStateValidator._validate_ante(game_state['ante'])
+        assert game_state["game_over"] in [0, 1]
+        assert isinstance(game_state["state"], int)
 
         return True
 
@@ -69,6 +65,14 @@ class GameStateValidator:
         required_fields = ["current_ante", "win_ante"]
         for field in required_fields:
             assert field in ante, f"Missing required field: {field}"
+        return True
+
+    @staticmethod
+    def _validate_round(round: Dict[str, Any]) -> bool:
+        """Validate round structure"""
+        required_fields = ["hands_left", "discards_left"]
+        for field in required_fields:
+            assert field in round, f"Missing required field: {field}"
         return True
 
     @staticmethod

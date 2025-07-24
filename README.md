@@ -23,17 +23,30 @@ Made a symlink -> ln -s ~/dev/balatro-rl/RLBridge /mnt/gamerlinuxssd/SteamLibrar
 - [x] Action reception and execution
 
 ### RL Training
-- [ ] Python RL environment setup
-- [ ] AI model architecture
-- [ ] Training loop integration
+- [x] Python RL environment setup
+- [x] AI model architecture
+- [x] Training loop integration
 
 ### Game Features  
-- [ ] Always have restart_run as an action option assuming the game is ongoing
+- [x] Always have restart_run as an action option assuming the game is ongoing
+- [x] Make it so that if we lose, we can restart, or if we win a round and see the "cash out" 
+page, then we also restart. but getting to the "cash out" state should give a ton of reward to incentivize
+the AI
+- [x] Should we add things that help the AI understand they have only 4 hands and 4 discards to work with? or whatever
+number it is? I think we should add the hands and discards in the game state as well that would be useful
+- [ ] Should we not give reward for just plain increasing chips? if you think about it, you can play anything and increase
+chips. Perhpas we just want to get wins of rounds just scoring chips is not enough?. Wonder if the losing penatly is not enough
 - [ ] Blind selection choices (skip vs select)
 - [ ] Extended game state (money, discards, hands played)
+- [ ] I wonder if there's a problem with the fact that they get points out of every hand played. I feel like
+it should learn to play more complex hands instead of just getting points even if just one hand scores
+we should maybe have the rewards reflect that
+- [ ] Add some mechanism of finding out how many times the AI has won the game
+- [ ] Is there a way to reward the AI for getting "fire" type scores which are really good
 - [ ] Shop interactions
 - [ ] Joker management
 
 ### RL Enhancements
+- [ ] **Retry Count Penalty**: Penalize high retry_count in rewards to discourage invalid actions. Currently retry_count tracks failed action attempts, but we could use this signal to teach the AI which actions are actually valid in each state. Formula: `reward -= retry_count * penalty_factor`. This would incentivize the AI to learn valid action spaces rather than trial-and-error.
 - [ ] Add a "Replay System" to analyze successful actions. For example, save seed, have an action log for reproduction etc 
 Can probably do this by adding it before the game is reset like a check on what criteria I want to save for, and save

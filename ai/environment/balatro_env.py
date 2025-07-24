@@ -35,6 +35,7 @@ class BalatroEnv(gym.Env):
         self.current_state = None
         self.prev_state = None
         self.game_over = False
+        self.restart_pending = False
         
         # Initialize communication and reward systems
         self.pipe_io = BalatroPipeIO()
@@ -58,7 +59,7 @@ class BalatroEnv(gym.Env):
         
         # Observation space: This should describe the type and shape of the observation
         # Constants
-        self.OBSERVATION_SIZE = 388 # you can get this value by running test_env.py. 
+        self.OBSERVATION_SIZE = 390 # you can get this value by running test_env.py. 
         self.observation_space = spaces.Box(
             low=-np.inf, # lowest bound of observation data
             high=np.inf, # highest bound of observation data
@@ -83,6 +84,7 @@ class BalatroEnv(gym.Env):
         self.current_state = None
         self.prev_state = None
         self.game_over = False
+        self.restart_pending = False
         
         # Reset reward tracking
         self.reward_calculator.reset()
@@ -150,8 +152,22 @@ class BalatroEnv(gym.Env):
             prev_state=self.prev_state if self.prev_state else {}
         )
         
-        # Check if episode is done
-        done = bool(self.current_state.get('game_over', 0)) # TODO send a game_over in our state
+        # Check if episode is done - delay end until after restart
+        game_over_flag = self.current_state.get('game_state', {}).get('game_over', 0)
+        
+        if game_over_flag == 1:
+            if not self.restart_pending:
+                # First time seeing game over - don't end episode yet, wait for restart
+                self.restart_pending = True
+                done = False
+            else:
+                # Game has restarted after game over, now end episode
+                self.restart_pending = False
+                done = True
+        else:
+            # Normal gameplay, no episode end
+            done = False
+            
         terminated = done
         truncated = False  # Not using time limits for now
         

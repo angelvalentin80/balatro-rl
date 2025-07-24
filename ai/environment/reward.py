@@ -9,6 +9,7 @@ that teach the AI what constitutes good vs bad Balatro gameplay.
 """
 
 from typing import Dict, Any
+import math
 
 from numpy import inner
 
@@ -48,31 +49,60 @@ class BalatroRewardCalculator:
         """
         reward = 0.0
 
+        # Small step penalty to encourage episode completion
+        reward -= 0.01
+
         inner_game_state = current_state.get('game_state', {})
+        retry_count = current_state.get('retry_count', 0)
         
         # Extract relevant metrics
         current_chips = inner_game_state.get('chips', 0)
         game_over = inner_game_state.get('game_over', 0)
+        state = inner_game_state.get('state', 0)
         # Ante
         ante_info = inner_game_state.get('ante', {})
         current_ante = ante_info.get('current_ante', 0)
         win_ante = ante_info.get('win_ante', 0)
+        # Blind info
+        blind_info = inner_game_state.get('blind', {})
+        blind_defeated = blind_info.get('defeated', False)
+        # Round info for discard tracking
+        round_info = inner_game_state.get('round', {})
+        discards_left = round_info.get('discards_left', 0)
         
-        # Chip-based rewards
-        chip_diff = current_chips - self.chips
-        if chip_diff > 0:
-            reward += chip_diff * 0.001  # Small reward for chip increases
+        
+        # Chip-based rewards - DISABLED to focus on blind completion only
+        # chip_diff = current_chips - self.chips
+        # if chip_diff > 0:
+        #     reward += math.log(chip_diff + 1) * 0.1
 
         # Ante based rewards
         ante_diff = current_ante - self.ante
         if ante_diff > 0:
             reward += ante_diff * 50.0  # Large reward for completing antes
+            
+        # Blind defeat rewards - HUGE reward for winning rounds!
+        if state == 8 and blind_defeated:  # ROUND_EVAL state with defeated blind
+            reward += 200.0  # Massive reward for beating a blind!
+            
+        # Penalty for not using discards (encourages hand formulation)
+        if discards_left > 0:
+            reward -= discards_left * 1.0  # Light penalty for unused discards
         
         # Game over penalty
         if game_over == 1:
             # Penalty based on how early the game ended
-            completion_ratio = current_ante / win_ante
-            reward += completion_ratio * 100.0  # Reward based on progress
+            completion_ratio = current_ante / win_ante if win_ante > 0 else 0
+            reward -= 50.0  # Base penalty for dying
+            reward += completion_ratio * 30.0  # Partial credit for progress (still net negative)
+            
+            # Episode completion bonus - reward for completing any antes
+            if current_ante >= 1:
+                reward += 100.0  # Bonus for making progress before game over
+
+        # Wrong move penalty - reduced to encourage exploration
+        if retry_count > 0:
+            reward -= 0.01 * retry_count  # Reduced from 0.1 to encourage exploration
             
         # Update previous state
         self.chips = current_chips
