@@ -139,7 +139,7 @@ class BalatroPipeIO:
             self.response_handle.write('\n')  # Important: newline for pipe communication
             self.response_handle.flush()  # Force write to pipe immediately
             
-            self.logger.debug(f"📤 SENT RESPONSE: {json.dumps(response_data)}")
+            self.logger.debug(f"📤 SENT RESPONSE: {json.dumps(response_data)}\n\n")
             return True
             
         except Exception as e:

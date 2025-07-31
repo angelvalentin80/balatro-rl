@@ -117,7 +117,6 @@ class BalatroStateMapper:
         
         features.extend(self._extract_game_features(raw_state.get('game_state', {})))
         features.extend(self._extract_available_actions(raw_state.get('available_actions', [])))
-        features.append(raw_state.get('retry_count', 0.0))
 
         return np.array(features, dtype=np.float32)
     
@@ -159,15 +158,14 @@ class BalatroStateMapper:
         for card in cards:
             card_features = []
             card_features.append(float(card.get('highlighted', False)))
+            
+            # Suit one-hot
             suits_mapping = {"Hearts": 0, "Diamonds": 1, "Spades": 2, "Clubs": 3}
             suit = card.get('suit', 'Unknown')
             card_features.extend(make_onehot(suits_mapping.get(suit, 4), 5))
-            card_features.append(float(card.get('debuff', False)))
-            card_features.append(float(card.get('cost', 0)))
-
-            # Extract base 
+            
+            # Card value one-hot
             base = card.get('base', {})
-            card_features.append(float(base.get('nominal', 0)))
             values_mapping = {
                 '2': 0, '3': 1, '4': 2, '5': 3, '6': 4, '7': 5, '8': 6, '9': 7, '10': 8,
                 'Jack': 9, 'Queen': 10, 'King': 11, 'Ace': 12
@@ -178,8 +176,8 @@ class BalatroStateMapper:
             features.extend(card_features)
         
         # Pad or truncate to fixed size 
-        max_cards = 15
-        features_per_card = 23  # 1+5+1+1+1+14 = highlighted+suit_onehot+debuff+cost+nominal+value_onehot
+        max_cards = 8  # Standard Balatro hand size
+        features_per_card = 20  # 1+5+14 = highlighted+suit_onehot+value_onehot
         
         if len(features) < max_cards * features_per_card:
             features.extend([0] * (max_cards * features_per_card - len(features)))
@@ -205,29 +203,16 @@ class BalatroStateMapper:
             List of normalized game features
         """
         features = []
-        features.extend(self._extract_blind_features(state.get('blind', {})))
         features.extend(self._extract_round_features(state.get('round', {})))
-        features.extend(self._extract_ante_features(state.get('ante', {})))
-        features.extend(make_onehot(state.get('state', 0), 20))
-        features.append(state.get('chips', 0))
+        features.append(float(state.get('blind_chips', 0)))
+        features.append(float(state.get('chips', 0)))
+        features.extend(make_onehot(state.get('state', 0), 10))  # Reduced state space
+        features.append(float(state.get('game_over', 0)))
         features.extend(self._extract_hand_features(state.get('hand', {})))
-        features.append(state.get('game_over', 0))
+        features.extend(self._extract_current_hand_scoring(state.get('current_hand', {})))
 
         return features
 
-    def _extract_ante_features(self, ante: Dict[str, Any]) -> List[float]:
-        """
-        Extract information relating to antes
-        
-        Args:
-            ante: Ante state inside of the game_state dictionary
-        Returns:
-            List of ante features
-        """
-        features = []
-        features.append(float(ante.get('current_ante', 0)))
-        features.append(float(ante.get('win_ante', 0)))
-        return features
     
     def _extract_round_features(self, round: Dict[str, Any]) -> List[float]:
         """
@@ -244,25 +229,49 @@ class BalatroStateMapper:
         return features
 
 
-    def _extract_blind_features(self, blind: Dict[str, Any]) -> List[float]:
-        """
-        Extract information relating to chips
 
+    def _extract_current_hand_scoring(self, current_hand: Dict[str, Any]) -> List[float]:
+        """
+        Extract current hand scoring information (chips, mult, score, hand type)
+        
         Args:
-            blind: Blind state inside of the game_state dictionary
+            current_hand: Current hand scoring data from game state
+            
         Returns:
-            List of blind features
+            List with chips, mult, score, and one-hot encoded hand type (16 dimensions total)
         """
         features = []
-        features.append(float(blind.get('dollars', 0.0)))
-        features.append(float(blind.get('defeated', False)))
-        type_mapping = {"Small": 0, "Big": 1, "Boss": 2}
-        blind_type = blind.get('type', 'Unknown')
-        type_index = type_mapping.get(blind_type, 3)
-        features.extend(make_onehot(type_index, 4))
-        features.append(float(blind.get('chips', 0.0)))
-        features.append(float(blind.get('blind_ante', 0.0)))
-
+        
+        # Raw scoring values
+        features.append(float(current_hand.get('chips', 0)))
+        features.append(float(current_hand.get('mult', 0)))  
+        features.append(float(current_hand.get('score', 0)))
+        
+        # Hand type one-hot encoding
+        hand_types = [
+            "None",          # 0 - No hand played yet
+            "High Card",     # 1
+            "Pair",          # 2
+            "Two Pair",      # 3
+            "Three of a Kind", # 4
+            "Straight",      # 5
+            "Flush",         # 6
+            "Full House",    # 7
+            "Four of a Kind", # 8
+            "Straight Flush", # 9
+            "Five of a Kind", # 10
+            "Flush House",   # 11
+            "Flush Five"     # 12
+        ]
+        
+        handname = current_hand.get('handname', 'None')
+        try:
+            hand_index = hand_types.index(handname)
+        except ValueError:
+            hand_index = 0  # Default to "None" for unknown hands
+            
+        features.extend(make_onehot(hand_index, len(hand_types)))
+        
         return features
     
 class BalatroActionMapper:
@@ -297,7 +306,7 @@ class BalatroActionMapper:
         """
         ai_action = rl_action[self.slices["action_selection"]].tolist()[0]
         response_data = {
-            "action": ai_action,
+            "action": ai_action + 1,  # Convert 0-based AI output to 1-based Balatro action IDs
             "params": self._extract_select_hand_params(rl_action),
         }
         self.response_validator.validate_response(response_data)

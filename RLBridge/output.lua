@@ -19,44 +19,30 @@ function O.get_game_state()
         state = G.STATE,
         game_over = game_over,
 
-        -- Round info
+        -- Round info (hands/discards left)
         round = O.get_round_info(),
 
-        -- Ante info
-        ante = O.get_ante_info(),
+        -- Current blind chip requirement
+        blind_chips = O.get_blind_chips(),
 
-        -- Current blind info (if in a round)
-        blind = O.get_current_blind_info(),
-
-        -- Hand info (if applicable)
+        -- Hand info (cards in hand)
         hand = O.get_hand_info(),
 
-        -- Chips/score info
+        -- Current total chips
         chips = G.GAME and G.GAME.chips or 0,
+
+        -- Current hand scoring (chips × mult = score)
+        current_hand = O.get_current_hand_scoring(),
     }
 end
 
---- Get current blind information
---- Extracts details about the current blind being played
---- @return table Blind data with defaults if not available
-function O.get_current_blind_info()
+--- Get blind chip requirement 
+--- @return number Chips needed to beat current blind
+function O.get_blind_chips()
     if not G.GAME or not G.GAME.blind then
-        return {
-            type = "None",
-            chips = 0,
-            dollars = 0,
-            defeated = false,
-            blind_ante = 0,
-        }
+        return 300  -- Default ante 1 small blind requirement
     end
-
-    return {
-        type = G.GAME.blind:get_type() or "None",
-        chips = G.GAME.blind.chips or 0,
-        dollars = G.GAME.blind.dollars or 0,
-        defeated = G.GAME.blind.defeated or false,
-        blind_ante = G.GAME.round_resets.blind_ante or 0,
-    }
+    return G.GAME.blind.chips or 300
 end
 
 --- Get hand information
@@ -87,28 +73,6 @@ function O.get_hand_info()
     }
 end
 
---- Get joker information
---- Extracts all joker cards currently owned by the player
---- @return table Joker data with names and identifiers
-function O.get_jokers_info()
-    if not G.jokers or not G.jokers.cards then
-        return { cards = {}, count = 0 }
-    end
-
-    local joker_cards = {}
-    for i, joker in ipairs(G.jokers.cards) do
-        table.insert(joker_cards, {
-            name = joker.config and joker.config.center and joker.config.center.name or "Unknown",
-            key = joker.config and joker.config.center and joker.config.center.key or "unknown",
-            id = joker.sort_id or i
-        })
-    end
-
-    return {
-        cards = joker_cards,
-        count = #joker_cards
-    }
-end
 
 --- Get round information
 --- Gets hands and discards left in the current round
@@ -120,20 +84,29 @@ function O.get_round_info()
     }
 end
 
---- Get ante information
---- Gets all of the important information necessary for antes
---- @return table Ante data with defaults if not available
-function O.get_ante_info()
-    if not G.GAME or not G.GAME.round_resets then
-        return {
-            win_ante = 8,
-            current_ante = 0,
-        }
-    end
 
+--- Get current hand scoring information
+--- Extracts chips, mult, and potential score for current/highlighted hand
+--- @return table Hand scoring data with defaults
+function O.get_current_hand_scoring()
+    -- Try to get current hand preview info
+    local chips = 0
+    local mult = 0
+    local score = 0
+    local handname = "None"
+    
+    if G.GAME and G.GAME.current_round and G.GAME.current_round.current_hand then
+        chips = G.GAME.current_round.current_hand.chips or 0
+        mult = G.GAME.current_round.current_hand.mult or 0
+        score = G.GAME.current_round.current_hand.chip_total or (chips * mult)
+        handname = G.GAME.current_round.current_hand.handname or "None"
+    end
+    
     return {
-        win_ante = G.GAME.win_ante or 8,
-        current_ante = G.GAME.round_resets.ante or 0,
+        chips = chips,
+        mult = mult,
+        score = score,
+        handname = handname
     }
 end
 

@@ -44,22 +44,23 @@ class BalatroEnv(gym.Env):
         # Define Gymnasium spaces
         # Action Spaces; This should describe the type and shape of the action
         # Constants
-        self.MAX_ACTIONS = 10 
+        self.MAX_ACTIONS = 7 # get from balatro actions.lua
+        self.MAX_CARDS = 8  # Max cards in hand
         action_selection = np.array([self.MAX_ACTIONS])
-        card_indices = np.array([2, 2, 2, 2, 2, 2, 2, 2, 2, 2]) # Handles up to 10 cards in a hand
+        card_indices = np.array([2] * self.MAX_CARDS) # 8 cards, each can be selected (1) or not (0)
         self.action_space = spaces.MultiDiscrete(np.concatenate([
             action_selection,
             card_indices
         ]))
         ACTION_SLICE_LAYOUT = [
             ("action_selection", 1),
-            ("card_indices", 10)
+            ("card_indices", self.MAX_CARDS)
         ]
         slices = self._build_action_slices(ACTION_SLICE_LAYOUT)
         
         # Observation space: This should describe the type and shape of the observation
         # Constants
-        self.OBSERVATION_SIZE = 390 # you can get this value by running test_env.py. 
+        self.OBSERVATION_SIZE = 198 # Minimal observation space for ante 1 focus (removed retry_count) 
         self.observation_space = spaces.Box(
             low=-np.inf, # lowest bound of observation data
             high=np.inf, # highest bound of observation data
@@ -103,9 +104,14 @@ class BalatroEnv(gym.Env):
         self.current_state = initial_request
         initial_observation = self.state_mapper.process_game_state(self.current_state)
         
+        # Create initial action mask
+        initial_available_actions = initial_request.get('available_actions', [])
+        initial_action_mask = self._create_action_mask(initial_available_actions)
+        self._action_masks = initial_action_mask
+        
         return initial_observation, {}
     
-    def step(self, action): #TODO add types
+    def step(self, action):
         """
         Take an action in the Balatro environment
         Sends action to Balatro mod via JSON pipe, waits for response,
@@ -146,7 +152,7 @@ class BalatroEnv(gym.Env):
         # Process new state for SB3
         observation = self.state_mapper.process_game_state(self.current_state)
         
-        # Calculate reward using expert reward calculator
+        # Calculate reward using expert reward calculator - no more retry penalties!
         reward = self.reward_calculator.calculate_reward(
             current_state=self.current_state,
             prev_state=self.prev_state if self.prev_state else {}
@@ -171,12 +177,19 @@ class BalatroEnv(gym.Env):
         terminated = done
         truncated = False  # Not using time limits for now
         
+        # Create action mask for MaskablePPO
+        available_actions = next_request.get('available_actions', [])
+        action_mask = self._create_action_mask(available_actions)
+        
         info = {
             'balatro_state': self.current_state.get('state', 0),
-            'available_actions': next_request.get('available_actions', [])
+            'available_actions': available_actions,
         }
-        # TODO have a feeling observation is not being return when we run out of actions which causes problems
-        return observation, reward, terminated, truncated, info 
+        
+        # Store action mask for MaskablePPO
+        self._action_masks = action_mask
+        
+        return observation, reward, terminated, truncated, info
 
     def cleanup(self):
         """
@@ -185,6 +198,32 @@ class BalatroEnv(gym.Env):
         Call this when shutting down to clean up pipe communication.
         """
         self.pipe_io.cleanup()
+
+    # Action Masks for MaskablePPO and for ActionWrapper
+    def action_masks(self):
+        """Required method for MaskablePPO"""
+        if hasattr(self, '_action_masks'):
+            return np.array(self._action_masks, dtype=bool)
+        else:
+            return np.array([True] * sum(self.action_space.nvec), dtype=bool)
+    
+    def _create_action_mask(self, available_actions):
+        """Create action mask for MultiDiscrete space"""
+        action_masks = []
+        
+        # Action selection mask (7 possible actions)
+        action_selection_mask = [False] * self.MAX_ACTIONS
+        for action_id in available_actions:
+            if 1 <= action_id <= self.MAX_ACTIONS:
+                action_selection_mask[action_id - 1] = True
+        action_masks.append(action_selection_mask)
+        
+        # Card selection masks (8 cards, each can be 0 or 1)
+        for _ in range(self.MAX_CARDS):
+            action_masks.append([True, True])
+        
+        # Flatten for MaskablePPO
+        return [item for sublist in action_masks for item in sublist] 
 
     @staticmethod
     def _build_action_slices(layout: List[Tuple[str, int]]) -> Dict[str, slice]:

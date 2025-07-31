@@ -18,9 +18,12 @@ import time
 from pathlib import Path
 
 # SB3 imports
-from stable_baselines3 import DQN, A2C, PPO
-from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
+from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.monitor import Monitor
+
+# SB3 Contrib for action masking
+from sb3_contrib import MaskablePPO
+from sb3_contrib.common.wrappers import ActionMasker
 
 # Our custom environment
 from .environment.balatro_env import BalatroEnv
@@ -38,10 +41,17 @@ def setup_logging():
     )
 
 
+def mask_fn(env):
+    """Extract action mask from the environment's action_masks() method"""
+    return env.action_masks()
+
 def create_environment():
     """Create and wrap the Balatro environment"""
     # Create base environment
     env = BalatroEnv()
+    
+    # Use ActionMasker wrapper
+    env = ActionMasker(env, mask_fn)
     
     # Wrap with Monitor for logging episode stats
     env = Monitor(env, filename="training_monitor.csv")
@@ -49,58 +59,29 @@ def create_environment():
     return env
 
 
-def create_model(env, algorithm="DQN", model_path=None):
+def create_model(env, model_path=None):
     """
-    Create SB3 model for training
+    Create MaskablePPO model for training
     
     Args:
         env: Balatro environment
-        algorithm: RL algorithm to use ("DQN", "A2C", "PPO")
         model_path: Path to load existing model (optional)
     
     Returns:
-        SB3 model ready for training
+        MaskablePPO model ready for training
     """
-    if algorithm == "DQN":
-        model = DQN(
-            "MlpPolicy", 
-            env, 
-            verbose=1,
-            learning_rate=1e-4,
-            buffer_size=10000,
-            learning_starts=1000,
-            target_update_interval=500,
-            train_freq=4,
-            gradient_steps=1,
-            exploration_fraction=0.1,
-            exploration_initial_eps=1.0,
-            exploration_final_eps=0.05,
-            tensorboard_log="./tensorboard_logs/"
-        )
-    elif algorithm == "A2C":
-        model = A2C(
-            "MlpPolicy",
-            env,
-            verbose=1,
-            learning_rate=7e-4,
-            n_steps=5,
-            gamma=0.99,
-            tensorboard_log="./tensorboard_logs/"
-        )
-    elif algorithm == "PPO":
-        model = PPO(
-            "MlpPolicy",
-            env,
-            verbose=1,
-            learning_rate=3e-4,
-            n_steps=2048,
-            batch_size=64,
-            n_epochs=10,
-            gamma=0.99,
-            tensorboard_log="./tensorboard_logs/"
-        )
-    else:
-        raise ValueError(f"Unknown algorithm: {algorithm}")
+    model = MaskablePPO(
+        "MlpPolicy",
+        env,
+        verbose=1,
+        learning_rate=1e-4,
+        n_steps=4096,
+        batch_size=64,
+        n_epochs=10,
+        gamma=0.99,
+        ent_coef=0.01,
+        tensorboard_log="./tensorboard_logs/"
+    )
     
     # Load existing model if path provided
     if model_path and Path(model_path).exists():
@@ -125,23 +106,29 @@ def create_callbacks(save_freq=1000):
     return callbacks
 
 
-def train_agent(total_timesteps=50000, algorithm="DQN", save_path="./models/balatro_final"):
+def train_agent(total_timesteps=100000, save_path="./models/balatro_final", resume_from=None):
     """
     Main training function
     
     Args:
         total_timesteps: Number of training steps
-        algorithm: RL algorithm to use
         save_path: Where to save final model
+        resume_from: Path to checkpoint to resume from
     """
     logger = logging.getLogger(__name__)
-    logger.info(f"Starting Balatro RL training with {algorithm}")
+    logger.info(f"Starting Balatro RL training with MaskablePPO")
     logger.info(f"Training for {total_timesteps} timesteps")
     
     try:
         # Create environment and model
         env = create_environment()
-        model = create_model(env, algorithm)
+        
+        if resume_from and Path(resume_from).exists():
+            logger.info(f"Resuming training from: {resume_from}")
+            model = MaskablePPO.load(resume_from, env=env, tensorboard_log="./tensorboard_logs/")
+        else:
+            logger.info("Starting training from scratch")
+            model = create_model(env)
         
         # Create callbacks
         callbacks = create_callbacks(save_freq=max(1000, total_timesteps // 20))
@@ -233,8 +220,8 @@ if __name__ == "__main__":
     setup_logging()
     
     # Create necessary directories
-    Path(".models").mkdir(exist_ok=True)
-    Path(".tensorboard_logs").mkdir(exist_ok=True)
+    Path("./models").mkdir(exist_ok=True)
+    Path("./tensorboard_logs").mkdir(exist_ok=True)
     
     # Train the agent
     print("\n🎮 Starting Balatro RL Training!")
@@ -245,18 +232,24 @@ if __name__ == "__main__":
     input("Press Enter to start training then press 'R' in Balatro)...")
     
     try:
+        # Find latest checkpoint to resume from
+        latest_checkpoint = None
+        models_dir = Path("./models")
+        if models_dir.exists():
+            checkpoints = list(models_dir.glob("balatro_model_*_steps.zip"))
+            if checkpoints:
+                # Sort by modification time and get the most recent
+                latest_checkpoint = max(checkpoints, key=lambda x: x.stat().st_mtime)
+                print(f"📂 Found checkpoint: {latest_checkpoint}")
+        
         model = train_agent(
             total_timesteps=100000,
-            algorithm="PPO",  # PPO supports MultiDiscrete actions
-            save_path="./models/balatro_trained"
+            save_path="./models/balatro_trained",
+            resume_from=str(latest_checkpoint) if latest_checkpoint else None
         )
         
         if model:
-            print("\n🎉 Training completed successfully!")
-            print("Testing the trained model...")
-            
-            # Test the trained model
-            test_trained_model("./models/balatro_trained", num_episodes=3)
+            print("\n🎉Training completed successfully! Ready for next training session.")
             
     except Exception as e:
         print(f"\n❌ Training failed: {e}")
