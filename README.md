@@ -34,17 +34,16 @@ page, then we also restart. but getting to the "cash out" state should give a to
 the AI
 - [x] Should we add things that help the AI understand they have only 4 hands and 4 discards to work with? or whatever
 number it is? I think we should add the hands and discards in the game state as well that would be useful
-- [ ] Should we not give reward for just plain increasing chips? if you think about it, you can play anything and increase
+- [x] Bug where AI can discard infinite times
+- [x] Should we not give reward for just plain increasing chips? if you think about it, you can play anything and increase
 chips. Perhpas we just want to get wins of rounds just scoring chips is not enough?. Wonder if the losing penatly is not enough
-- [ ] Blind selection choices (skip vs select)
-- [ ] Extended game state (money, discards, hands played)
-- [ ] I wonder if there's a problem with the fact that they get points out of every hand played. I feel like
-it should learn to play more complex hands instead of just getting points even if just one hand scores
-we should maybe have the rewards reflect that
-- [ ] Add some mechanism of finding out how many times the AI has won the game
+- [x] I wonder if there's a problem with the fact that they get points out of every hand played. I feel like it should learn to play more complex hands instead of just getting points even if just one hand scores we should maybe have the rewards reflect that
+- [ ] Now that we have improved logging that shows win rate and stuff, maybe we can reward the AI for increased win rate and stuff? that is my main goal so that it wins
+near 100% of the time
+- [ ] Add some mechanism of finding out how many times the AI has won the game also
+figure out a way to get a replay of the game. for example i just noticed the RL model scored a 592. It would be amazing to have that saved somewhere. But I would need the seed (which we can't get if we haven't lost) Or maybe there's a way to get a recording of it which would work too
+There's gotta be a function that gets the current seed even when the game isn't over
 - [ ] Is there a way to reward the AI for getting "fire" type scores which are really good
-- [ ] Shop interactions
-- [ ] Joker management
 
 ### RL Enhancements
 - [ ] **Retry Count Penalty**: Penalize high retry_count in rewards to discourage invalid actions. Currently retry_count tracks failed action attempts, but we could use this signal to teach the AI which actions are actually valid in each state. Formula: `reward -= retry_count * penalty_factor`. This would incentivize the AI to learn valid action spaces rather than trial-and-error.

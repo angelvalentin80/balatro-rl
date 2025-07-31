@@ -86,8 +86,9 @@ local action_registry = {
             return input.play_hand()
         end,
         available_when = function()
-            return G.STATE == G.STATES.SELECTING_HAND and G.hand and G.hand.cards and G.FUNCS.can_play and
+            return G.STATE == G.STATES.SELECTING_HAND and G.hand and G.hand.cards and
                 #G.hand.highlighted > 0 and utils.is_game_ready_for_action() and
+                G.GAME.current_round.hands_left > 0 and  -- Must have hands left
                 not action_state.play_hand
         end,
     },
@@ -97,8 +98,9 @@ local action_registry = {
             return input.discard_hand()
         end,
         available_when = function()
-            return G.STATE == G.STATES.SELECTING_HAND and G.hand and G.hand.cards and G.FUNCS.can_discard and
+            return G.STATE == G.STATES.SELECTING_HAND and G.hand and G.hand.cards and
                 #G.hand.highlighted > 0 and utils.is_game_ready_for_action() and
+                G.GAME.current_round.discards_left > 0 and  -- Must have discards left
                 not action_state.discard_hand
         end,
     },

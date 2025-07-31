@@ -17,14 +17,13 @@ class GameStateValidator:
     {
         game_state: Dict, # The whole game state table 
         available_actions: List, # The available actions all as integers
-        retry_count: int, This is to handle retries if AI fails
     }
     """
     
     @staticmethod
     def validate_game_state(game_state: Dict[str, Any]) -> bool:
         """Validate that game state has required fields"""
-        required_fields = ['game_state', 'available_actions', 'retry_count']
+        required_fields = ['game_state', 'available_actions']
         
         for field in required_fields:
             assert field in game_state, f"Missing required field: {field}"
@@ -34,8 +33,6 @@ class GameStateValidator:
         assert isinstance(inner_game_state, dict), "game_state must be a dictionary"
         available_actions = game_state.get("available_actions")
         assert isinstance(available_actions, list), "available_actions must be a list"
-        retry_count = game_state.get("retry_count")
-        assert isinstance(retry_count, int), "retry_count must be an integer"
 
         GameStateValidator._validate_inner_game_state(inner_game_state)
         
@@ -52,19 +49,21 @@ class GameStateValidator:
         # Conditional validations in game_state
         GameStateValidator._validate_hand(game_state['hand'])
         GameStateValidator._validate_round(game_state['round'])
-        GameStateValidator._validate_blind(game_state['blind'])
-        GameStateValidator._validate_ante(game_state['ante'])
+        GameStateValidator._validate_current_hand(game_state['current_hand'])
         assert game_state["game_over"] in [0, 1]
         assert isinstance(game_state["state"], int)
+        assert isinstance(game_state["blind_chips"], (int, float))
+        assert isinstance(game_state["chips"], (int, float))
 
         return True
 
     @staticmethod
-    def _validate_ante(ante: Dict[str, Any]) -> bool:
-        """Validate ante structure"""
-        required_fields = ["current_ante", "win_ante"]
+    def _validate_current_hand(current_hand: Dict[str, Any]) -> bool:
+        """Validate current hand scoring structure"""
+        required_fields = ["chips", "mult", "score", "handname"]
         for field in required_fields:
-            assert field in ante, f"Missing required field: {field}"
+            assert field in current_hand, f"Missing required field: {field}"
+        assert isinstance(current_hand["handname"], str)
         return True
 
     @staticmethod
@@ -75,13 +74,6 @@ class GameStateValidator:
             assert field in round, f"Missing required field: {field}"
         return True
 
-    @staticmethod
-    def _validate_blind(blind: Dict[str, Any]) -> bool:
-        """Validate ante structure"""
-        required_fields = ["dollars", "defeated", "type", "chips", "blind_ante"]
-        for field in required_fields:
-            assert field in blind, f"Missing required field: {field}"
-        return True
 
     @staticmethod
     def _validate_hand(hand: Dict[str, Any]) -> bool:

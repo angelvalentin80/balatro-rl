@@ -28,7 +28,6 @@ end
 function I.select_blind()
     -- Get the blind that's on deck and just select it
     local blind_on_deck = G.GAME.blind_on_deck
-    print("Blind on deck: " .. blind_on_deck)
 
     -- Create the button structure that select_blind expects
     local fake_button = {

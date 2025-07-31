@@ -1,122 +1,164 @@
 """
-Balatro Reward System - The Expert on What's Good/Bad
+Balatro Reward System - Ante 1 Focused
 
-This module is the single source of truth for reward calculation in Balatro RL.
-All reward logic is centralized here to make experimentation and tuning easier.
-
-The BalatroRewardCalculator analyzes game state changes and assigns rewards
-that teach the AI what constitutes good vs bad Balatro gameplay.
+Simple reward system focused on teaching the AI to consistently beat
+the 300-chip small blind in ante 1. No complex scaling, just core fundamentals.
 """
 
 from typing import Dict, Any
-import math
-
-from numpy import inner
 
 class BalatroRewardCalculator:
     """
-    Expert reward calculator for Balatro RL training
+    Focused reward calculator for ante 1 mastery.
     
-    This is the single authority on what constitutes good/bad play in Balatro.
-    Centralizes all reward logic for easy experimentation and tuning.
-    
-    Reward philosophy:
-    - Positive rewards for progress (chips, rounds, money)
-    - Bonus rewards for efficiency (fewer hands/discards used)  
-    - Large rewards for major milestones (completing antes)
-    - Negative rewards for game over (based on progress made)
+    Goal: Teach AI to consistently score 300+ chips to beat small blind.
+    Strategy: Reward consistent 75+ point hands, not risky high hands.
     """
     
     def __init__(self):
-        self.chips = 0
-        self.ante = 0
+        self.previous_chips = 0
+        self.previous_hand_played = "None"
+        self.blind_already_defeated = False
+        
+        # Episode tracking for win logging
+        self.episode_count = 0
+        self.wins = 0
+        self.hands_played = []  # Track each hand in current episode
+        self.episode_total_reward = 0
+        self.last_seen_hand_type = 'Unknown'  # Store hand type when we see it
+        self.winning_chips = 0  # Store chips when blind is defeated
+        
+        # Percentage-based reward thresholds (% of blind requirement)
+        self.REWARD_THRESHOLDS = {
+            "excellent": 80.0,  # 80%+ of blind requirement
+            "good": 50.0,       # 50-79% of blind requirement  
+            "decent": 25.0      # 25-49% of blind requirement
+        }
         
     def calculate_reward(self, current_state: Dict[str, Any], 
                         prev_state: Dict[str, Any] = None) -> float:
-        """
-        Main reward calculation method - analyzes state changes and assigns rewards
-        
-        This is the core method that determines what the AI should optimize for.
-        Examines differences between previous and current game state to calculate
-        appropriate rewards for the action that caused the transition.
-        
-        Args:
-            current_state: Current Balatro game state
-            prev_state: Previous Balatro game state (None for first step)
-            
-        Returns:
-            Float reward value (positive = good, negative = bad, zero = neutral)
-        """
+        """Simple reward focused on ante 1 small blind success"""
         reward = 0.0
-
-        # Small step penalty to encourage episode completion
-        reward -= 0.01
-
-        inner_game_state = current_state.get('game_state', {})
-        retry_count = current_state.get('retry_count', 0)
+        reward_breakdown = []  # Track all reward components
         
-        # Extract relevant metrics
+        inner_game_state = current_state.get('game_state', {})
+        
+        # Extract key metrics
         current_chips = inner_game_state.get('chips', 0)
         game_over = inner_game_state.get('game_over', 0)
-        state = inner_game_state.get('state', 0)
-        # Ante
-        ante_info = inner_game_state.get('ante', {})
-        current_ante = ante_info.get('current_ante', 0)
-        win_ante = ante_info.get('win_ante', 0)
-        # Blind info
-        blind_info = inner_game_state.get('blind', {})
-        blind_defeated = blind_info.get('defeated', False)
-        # Round info for discard tracking
-        round_info = inner_game_state.get('round', {})
-        discards_left = round_info.get('discards_left', 0)
+        
+        # Check if blind is defeated by comparing chips to requirement
+        blind_chips = inner_game_state.get('blind_chips', 300) # TODO 300 only focusing on first blind
+        # Only consider blind defeated if we actually have chips AND a valid blind requirement
+        blind_defeated = (current_chips > 0 and blind_chips > 0 and current_chips >= blind_chips)
         
         
-        # Chip-based rewards - DISABLED to focus on blind completion only
-        # chip_diff = current_chips - self.chips
-        # if chip_diff > 0:
-        #     reward += math.log(chip_diff + 1) * 0.1
-
-        # Ante based rewards
-        ante_diff = current_ante - self.ante
-        if ante_diff > 0:
-            reward += ante_diff * 50.0  # Large reward for completing antes
-            
-        # Blind defeat rewards - HUGE reward for winning rounds!
-        if state == 8 and blind_defeated:  # ROUND_EVAL state with defeated blind
-            reward += 200.0  # Massive reward for beating a blind!
-            
-        # Penalty for not using discards (encourages hand formulation)
-        if discards_left > 0:
-            reward -= discards_left * 1.0  # Light penalty for unused discards
+        # Hand type info - use current hand scoring
+        current_hand_info = inner_game_state.get('current_hand', {})
+        current_hand_played = current_hand_info.get('handname', 'None')
         
-        # Game over penalty
-        if game_over == 1:
-            # Penalty based on how early the game ended
-            completion_ratio = current_ante / win_ante if win_ante > 0 else 0
-            reward -= 50.0  # Base penalty for dying
-            reward += completion_ratio * 30.0  # Partial credit for progress (still net negative)
+        # Store hand type when we see it (for later use when chips change)
+        if current_hand_played and current_hand_played != 'None' and current_hand_played != '':
+            self.last_seen_hand_type = current_hand_played
+        
+        # === CORE SCORING REWARDS ===
+        # Reward good hands (chip increases) based on % of blind requirement
+        chip_gain = current_chips - self.previous_chips
+        if chip_gain > 0 and game_over == 0 and not self.blind_already_defeated and blind_chips > 0:
+            # Track this hand for episode logging (use stored hand type)
+            # Only track if blind not already defeated
+            hand_type_to_use = getattr(self, 'last_seen_hand_type', 'Unknown')
+            self._track_hand_played(chip_gain, hand_type_to_use, current_chips)
             
-            # Episode completion bonus - reward for completing any antes
-            if current_ante >= 1:
-                reward += 100.0  # Bonus for making progress before game over
-
-        # Wrong move penalty - reduced to encourage exploration
-        if retry_count > 0:
-            reward -= 0.01 * retry_count  # Reduced from 0.1 to encourage exploration
+            # Calculate percentage of blind requirement this hand achieved
+            chip_percentage = (chip_gain / blind_chips) * 100
             
-        # Update previous state
-        self.chips = current_chips
-        self.ante = current_ante
+            if chip_percentage >= self.REWARD_THRESHOLDS["excellent"]:
+                reward += 10.0
+                reward_breakdown.append(f"Excellent hand (+{chip_gain} chips, {chip_percentage:.1f}% of blind): +10.0")
+            elif chip_percentage >= self.REWARD_THRESHOLDS["good"]:
+                reward += 4.0
+                reward_breakdown.append(f"Good hand (+{chip_gain} chips, {chip_percentage:.1f}% of blind): +4.0")
+            elif chip_percentage >= self.REWARD_THRESHOLDS["decent"]:
+                reward += 1.0
+                reward_breakdown.append(f"Decent hand (+{chip_gain} chips, {chip_percentage:.1f}% of blind): +1.0")
+            # <25% of blind = no reward (too small to matter)
+        
+        # === REMOVED HAND TYPE REWARDS ===
+        # Hand type rewards removed - in Balatro, only chips matter!
+        # A High Card scoring 300 chips beats a Full House scoring 100 chips
+                
+        # === BLIND COMPLETION ===
+        # Main goal - beat the blind (only reward once per episode)
+        if blind_defeated and not self.blind_already_defeated and game_over == 0:
+            reward += 500.0  # SUCCESS! Increased from +100 to +500
+            reward_breakdown.append(f"BLIND DEFEATED: +500.0")
+            self.blind_already_defeated = True
+            self.winning_chips = current_chips  # Store winning chip count
+            
+        # === PENALTIES ===
+        # Game over penalty - ONLY for actual losses (blind not defeated)
+        if game_over == 1 and not hasattr(self, 'game_over_penalty_applied') and not self.blind_already_defeated:
+            reward -= 200.0  # Increased from -20 to -200
+            reward_breakdown.append("Game over: -200.0")
+            self.game_over_penalty_applied = True
+            
+        # Track episode total reward
+        self.episode_total_reward += reward
+        
+        # Keep only essential logging - no step-by-step reward breakdown
+        
+        # Update tracking
+        self.previous_chips = current_chips
+        self.previous_hand_played = current_hand_played
         
         return reward
     
     def reset(self):
-        """
-        Reset reward calculator state for new episode
+        """Reset for new episode - log win details if episode was won"""
+        self.episode_count += 1
         
-        Called at the start of each new Balatro run to clear
-        previous state tracking variables.
-        """
-        self.chips = 0
-        self.ante = 0
+        # Check if this episode was a win and log details
+        if self.blind_already_defeated:
+            self.wins += 1
+            self._log_episode_win()
+            
+            # Show win rate on every win for immediate feedback
+            self._log_win_rate()
+        
+        # Reset for next episode
+        self.previous_chips = 0
+        self.previous_hand_played = "None"
+        self.blind_already_defeated = False
+        self.hands_played = []
+        self.episode_total_reward = 0
+        self.last_seen_hand_type = 'Unknown'
+        self.winning_chips = 0
+        # Reset game over penalty flag
+        if hasattr(self, 'game_over_penalty_applied'):
+            delattr(self, 'game_over_penalty_applied')
+
+    def _log_episode_win(self):
+        """Log detailed breakdown of winning episode"""
+        final_chips = self.winning_chips if self.winning_chips > 0 else (max([hand['total_chips'] for hand in self.hands_played]) if self.hands_played else 0)
+        
+        # Episode summary
+        print(f"🎯 EPISODE {self.episode_count} COMPLETE: WON with {final_chips} chips in {len(self.hands_played)} hands | Total reward: {self.episode_total_reward:.1f}")
+        
+        # Hand-by-hand breakdown
+        for i, hand in enumerate(self.hands_played, 1):
+            print(f"   Hand {i}: {hand['hand_type']} (+{hand['chips']} chips, total: {hand['total_chips']})")
     
+    def _log_win_rate(self):
+        """Log win rate statistics"""
+        win_rate = (self.wins / self.episode_count) * 100
+        print(f"📊 Episode {self.episode_count}: {self.wins} wins ({win_rate:.1f}%) | Last 100: TBD")
+    
+    def _track_hand_played(self, chip_gain, current_hand_played, current_chips):
+        """Track hand details for episode logging"""
+        hand_info = {
+            'chips': chip_gain,
+            'hand_type': current_hand_played if current_hand_played != "None" else "Unknown",
+            'total_chips': current_chips
+        }
+        self.hands_played.append(hand_info)

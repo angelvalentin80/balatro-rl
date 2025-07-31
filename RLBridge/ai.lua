@@ -10,10 +10,8 @@ local communication = require("communication")
 local utils = require("utils")
 
 -- State management
-local last_state_hash = nil
-local last_actions_hash = nil
+local last_combined_hash = nil
 local pending_action = nil
-local retry_count = 0
 local need_retry_request = false
 local rl_training_active = false
 local last_key_pressed = nil
@@ -22,7 +20,6 @@ local last_key_pressed = nil
 --- Sets up communication and prepares the AI for operation
 --- @return nil
 function AI.init()
-    utils.log_ai("Initializing AI system...")
     communication.init()
 
     -- Hook into Love2D keyboard events
@@ -37,7 +34,6 @@ function AI.init()
                 original_keypressed(key)
             end
         end
-    else
     end
 end
 
@@ -50,15 +46,9 @@ function AI.update()
         if last_key_pressed == "r" then
             if not rl_training_active then
                 rl_training_active = true
-                utils.log_ai("🚀 RL Training STARTED (R pressed)")
-            end
-        elseif last_key_pressed == "t" then
-            if rl_training_active then
-                rl_training_active = false
-                utils.log_ai("⏹️ RL Training STOPPED (T pressed)")
+                utils.log_ai("\n\nRL Training STARTED (R pressed)")
             end
         end
-
         -- Clear the key press
         last_key_pressed = nil
     end
@@ -82,78 +72,92 @@ function AI.update()
         return
     end
 
-    -- Create hash to detect state changes
-    local state_hash = AI.hash_state(current_state)
-    local actions_hash = AI.hash_actions(available_actions)
+    -- Create combined hash to detect meaningful changes
+    local combined_hash = AI.hash_combined_state(current_state, available_actions)
 
-    if state_hash ~= last_state_hash or actions_hash ~= last_actions_hash or need_retry_request then
-        -- State has changed
-        if state_hash ~= last_state_hash then
-            utils.log_ai("State changed to: " ..
-                current_state.state .. " (" .. utils.get_state_name(current_state.state) .. ")")
-            action.reset_state()
-            last_state_hash = state_hash
-        end
+    if combined_hash ~= last_combined_hash or need_retry_request then
+        -- Game state or available actions have changed
+        utils.log_ai("State/Actions changed: State: " ..
+            current_state.state .. " (" .. utils.get_state_name(current_state.state) .. ") | " ..
+            "Actions: " .. table.concat(utils.get_action_names(available_actions), ", "))
 
-        -- Available actions have changed
-        if actions_hash ~= last_actions_hash then
-            utils.log_ai("Available actions changed: " ..
-                table.concat(utils.get_action_names(available_actions), ", "))
-            last_actions_hash = actions_hash
-        end
+        action.reset_state()
 
         -- Request action from AI
         need_retry_request = false
-        local ai_response = communication.request_action(current_state, available_actions, retry_count)
+        local ai_response = communication.request_action(current_state, available_actions)
 
         if ai_response then
             -- Handling handshake
             if ai_response.action == "ready" then
                 utils.log_ai("Handshake complete - AI ready")
-                -- Don't return - continue normal game loop
                 -- Force a state check on next frame to send real request
-                last_state_hash = nil
+                last_combined_hash = nil
             else
                 pending_action = ai_response
+                last_combined_hash = combined_hash
             end
         end
     end
 
     -- Execute pending action
     if pending_action then
-        local result = action.execute_action(pending_action.action, pending_action.params)
-        if result.success then
-            utils.log_ai("Action executed successfully: " .. pending_action.action)
-            retry_count = 0
+        -- Validate action is still available in current state
+        local current_actions = action.get_available_actions()
+        local action_still_valid = false
+        for _, valid_action in ipairs(current_actions) do
+            if valid_action == pending_action.action then
+                action_still_valid = true
+                break
+            end
+        end
+        
+        if action_still_valid then
+            local result = action.execute_action(pending_action.action, pending_action.params)
+            if result.success then
+                utils.log_ai("Action executed successfully: " .. pending_action.action)
+            else
+                utils.log_ai("Action failed: " .. (result.error or "Unknown error") .. " RETRYING...")
+                need_retry_request = true
+            end
         else
-            -- Update retry_count to indicate state change
-            utils.log_ai("Action failed: " .. (result.error or "Unknown error") .. " RETRYING...")
-            retry_count = retry_count + 1
+            utils.log_ai("Action no longer valid (state changed), discarding: " .. pending_action.action)
+            -- Force a retry to get a new action for the current state
             need_retry_request = true
         end
         pending_action = nil
+        utils.log_ai("\n\n\n")
     end
 end
 
---- Create simple hash of game state for change detection
---- Combines state, round, and chips into a unique identifier
+--- Create combined hash of game state and actions for change detection
+--- Only sends AI requests when both state and actions are ready/changed
 --- @param game_state table Current game state data
---- @return string Hash representing the current state
-function AI.hash_state(game_state)
-    return game_state.state .. "_" .. (game_state.chips or 0) -- TODO update hash to be more unique
-end
+--- @param available_actions table Available actions list
+--- @return string Combined hash representing state + actions
+function AI.hash_combined_state(game_state, available_actions)
+    -- State components
+    local state_parts = {
+        game_state.state or 0,
+        game_state.chips or 0,
+        game_state.blind_chips or 0,
+        (game_state.round and game_state.round.hands_left) or 0,
+        (game_state.round and game_state.round.discards_left) or 0,
+        (game_state.hand and game_state.hand.size) or 0,
+        (game_state.hand and game_state.hand.highlighted_count) or 0,
+        game_state.game_over or 0
+    }
 
---- Create simple hash of available actions
---- Sorts action names and concatenates them for comparison
---- @param actions table Available actions table
---- @return string Hash representing available actions
-function AI.hash_actions(actions)
+    -- Action components
     local action_ids = {}
-    for _, id in ipairs(actions) do
-        table.insert(action_ids, id)
+    for _, id in ipairs(available_actions) do
+        table.insert(action_ids, tostring(id))
     end
     table.sort(action_ids)
-    return table.concat(action_ids, ",")
+
+    -- Combine everything
+    local combined = table.concat(state_parts, "_") .. "|" .. table.concat(action_ids, ",")
+    return combined
 end
 
 return AI
