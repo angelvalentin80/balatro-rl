@@ -85,5 +85,3 @@ The mod can successfully:
 ## Communication with Claude
 - Please keep chats as efficient as possible and brief. No fluff talk, just get to the point
 - Try to break things down in first principles effectively
-- Do not add explanatory comments about why values changed (e.g., "# Changed from X to Y because...") - just use the correct values
-- Comments should explain what something does, not why it was modified

@@ -12,9 +12,9 @@ local utils = require("utils")
 -- State management
 local last_combined_hash = nil
 local pending_action = nil
+local need_retry_request = false
 local rl_training_active = false
 local last_key_pressed = nil
-local retry_count = 0
 
 --- Initialize AI system
 --- Sets up communication and prepares the AI for operation
@@ -75,7 +75,7 @@ function AI.update()
     -- Create combined hash to detect meaningful changes
     local combined_hash = AI.hash_combined_state(current_state, available_actions)
 
-    if combined_hash ~= last_combined_hash then
+    if combined_hash ~= last_combined_hash or need_retry_request then
         -- Game state or available actions have changed
         utils.log_ai("State/Actions changed: State: " ..
             current_state.state .. " (" .. utils.get_state_name(current_state.state) .. ") | " ..
@@ -83,21 +83,20 @@ function AI.update()
 
         action.reset_state()
 
-        -- Auto-skip trivial actions (don't send to AI)
-        if AI.should_auto_skip(current_state, available_actions) then
-            AI.execute_auto_skip_action(current_state, available_actions)
-            return
-        end
-
-        -- Add retry_count to current state
-        current_state.retry_count = retry_count
-        
-        -- Request action from AI (only for core gameplay)
+        -- Request action from AI
+        need_retry_request = false
         local ai_response = communication.request_action(current_state, available_actions)
 
         if ai_response then
-            pending_action = ai_response
-            last_combined_hash = combined_hash
+            -- Handling handshake
+            if ai_response.action == "ready" then
+                utils.log_ai("Handshake complete - AI ready")
+                -- Force a state check on next frame to send real request
+                last_combined_hash = nil
+            else
+                pending_action = ai_response
+                last_combined_hash = combined_hash
+            end
         end
     end
 
@@ -117,23 +116,17 @@ function AI.update()
             local result = action.execute_action(pending_action.action, pending_action.params)
             if result.success then
                 utils.log_ai("Action executed successfully: " .. pending_action.action)
-                retry_count = 0  -- Reset retry count on success
-                pending_action = nil
-                utils.log_ai("\n\n\n")
             else
-                utils.log_ai("Action failed: " .. (result.error or "Unknown error"))
-                retry_count = retry_count + 1
-                utils.log_ai("Retry count: " .. retry_count)
-                -- Keep pending_action to retry on next frame
-                -- Force state recheck to send updated state with retry_count
-                last_combined_hash = nil
+                utils.log_ai("Action failed: " .. (result.error or "Unknown error") .. " RETRYING...")
+                need_retry_request = true
             end
         else
             utils.log_ai("Action no longer valid (state changed), discarding: " .. pending_action.action)
-            retry_count = 0  -- Reset on state change
-            pending_action = nil
-            utils.log_ai("\n\n\n")
+            -- Force a retry to get a new action for the current state
+            need_retry_request = true
         end
+        pending_action = nil
+        utils.log_ai("\n\n\n")
     end
 end
 
@@ -165,44 +158,6 @@ function AI.hash_combined_state(game_state, available_actions)
     -- Combine everything
     local combined = table.concat(state_parts, "_") .. "|" .. table.concat(action_ids, ",")
     return combined
-end
-
---- Check if current state should be auto-skipped (not sent to AI)
---- @param current_state table Current game state  
---- @param available_actions table Available actions list
---- @return boolean True if should auto-skip, false if send to AI
-function AI.should_auto_skip(current_state, available_actions)
-    -- Auto-skip START_RUN in menu (action ID = 4)
-    if current_state.state == G.STATES.MENU and #available_actions == 1 and available_actions[1] == 4 then
-        return true
-    end
-    
-    -- Auto-skip SELECT_BLIND in blind selection (action ID = 5)
-    if current_state.state == G.STATES.BLIND_SELECT and #available_actions == 1 and available_actions[1] == 5 then
-        return true
-    end
-    
-    -- Don't auto-skip anything else - core actions (1,2,3) go to AI
-    
-    return false
-end
-
---- Execute auto-skip action without AI involvement
---- @param current_state table Current game state
---- @param available_actions table Available actions list  
-function AI.execute_auto_skip_action(current_state, available_actions)
-    local action_id = available_actions[1]
-    utils.log_ai("Auto-executing action: " .. action.get_action_name(action_id))
-    
-    local result = action.execute_action(action_id, {})
-    if result.success then
-        utils.log_ai("Auto-execution successful: " .. action.get_action_name(action_id))
-    else
-        utils.log_ai("Auto-execution failed: " .. (result.error or "Unknown error"))
-    end
-    
-    -- Force state recheck after auto-execution
-    last_combined_hash = nil
 end
 
 return AI

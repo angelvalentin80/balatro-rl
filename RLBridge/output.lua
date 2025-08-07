@@ -40,7 +40,7 @@ end
 --- @return number Chips needed to beat current blind
 function O.get_blind_chips()
     if not G.GAME or not G.GAME.blind then
-        return 300  -- TODO probably fix this if we are doing more than one blind Default ante 1 small blind requirement
+        return 300  -- Default ante 1 small blind requirement
     end
     return G.GAME.blind.chips or 300
 end
@@ -60,6 +60,7 @@ function O.get_hand_info()
                 nominal = card.base.nominal or 0,
                 value = card.base.value or ""
             },
+            debuff = card.debuff or false,
             highlighted = card.highlighted or false,
             suit = card.base.suit or ""
         })

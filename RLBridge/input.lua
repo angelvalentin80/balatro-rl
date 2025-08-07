@@ -98,5 +98,14 @@ function I.discard_hand()
     return { success = true }
 end
 
+--- Click "Cash Out" button to cash out after winning a blind
+--- @return table Result with success status and optional error message
+function I.cash_out()
+    -- Find the cash out button and simulate clicking it
+    local cash_out_button = { config = { button = nil } }
+    G.FUNCS.cash_out(cash_out_button)
+    utils.log_input("cash_out " .. utils.completed_success_msg)
+    return { success = true }
+end
 
 return I

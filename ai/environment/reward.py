@@ -46,14 +46,6 @@ class BalatroRewardCalculator:
         # Extract key metrics
         current_chips = inner_game_state.get('chips', 0)
         game_over = inner_game_state.get('game_over', 0)
-        retry_count = inner_game_state.get('retry_count', 0)
-        
-        # === RETRY PENALTY ===
-        # Negative reward for invalid actions that require retries
-        if retry_count > 0:
-            retry_penalty = -0.1 * retry_count  # -0.1 per retry
-            reward += retry_penalty
-            reward_breakdown.append(f"retry_penalty: {retry_penalty:.2f} (retries: {retry_count})")
         
         # Check if blind is defeated by comparing chips to requirement
         blind_chips = inner_game_state.get('blind_chips', 300) # TODO 300 only focusing on first blind
@@ -90,9 +82,7 @@ class BalatroRewardCalculator:
             elif chip_percentage >= self.REWARD_THRESHOLDS["decent"]:
                 reward += 1.0
                 reward_breakdown.append(f"Decent hand (+{chip_gain} chips, {chip_percentage:.1f}% of blind): +1.0")
-            else:
-                reward += 0.5
-                reward_breakdown.append(f"Small hand (+{chip_gain} chips, {chip_percentage:.1f}% of blind): +0.5")
+            # <25% of blind = no reward (too small to matter)
         
         # === REMOVED HAND TYPE REWARDS ===
         # Hand type rewards removed - in Balatro, only chips matter!
@@ -101,16 +91,16 @@ class BalatroRewardCalculator:
         # === BLIND COMPLETION ===
         # Main goal - beat the blind (only reward once per episode)
         if blind_defeated and not self.blind_already_defeated and game_over == 0:
-            reward += 50.0  # SUCCESS! Normalized from +500 to +50
-            reward_breakdown.append(f"BLIND DEFEATED: +50.0")
+            reward += 500.0  # SUCCESS! Increased from +100 to +500
+            reward_breakdown.append(f"BLIND DEFEATED: +500.0")
             self.blind_already_defeated = True
             self.winning_chips = current_chips  # Store winning chip count
             
         # === PENALTIES ===
         # Game over penalty - ONLY for actual losses (blind not defeated)
         if game_over == 1 and not hasattr(self, 'game_over_penalty_applied') and not self.blind_already_defeated:
-            reward -= 20.0  # Normalized from -200 to -20
-            reward_breakdown.append("Game over: -20.0")
+            reward -= 200.0  # Increased from -20 to -200
+            reward_breakdown.append("Game over: -200.0")
             self.game_over_penalty_applied = True
             
         # Track episode total reward

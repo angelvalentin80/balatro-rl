@@ -54,7 +54,6 @@ class GameStateValidator:
         assert isinstance(game_state["state"], int)
         assert isinstance(game_state["blind_chips"], (int, float))
         assert isinstance(game_state["chips"], (int, float))
-        assert isinstance(game_state.get("retry_count", 0), int)
 
         return True
 
@@ -95,7 +94,7 @@ class GameStateValidator:
     @staticmethod
     def _validate_card(card: Dict[str, Any], index: int) -> bool:
         """Validate individual card structure"""
-        required_fields = ['suit', 'base', 'highlighted']
+        required_fields = ['suit', 'base', 'highlighted', 'debuff']
         
         for field in required_fields:
             assert field in card, f"Card {index} missing required field: {field}"
@@ -126,8 +125,4 @@ class ResponseValidator:
 
         assert isinstance(response["action"], int)
         assert isinstance(response["params"], list)
-        
-        # Validate action is within valid range (1=SELECT_HAND, 2=PLAY_HAND, 3=DISCARD_HAND)
-        valid_actions = [1, 2, 3]
-        assert response["action"] in valid_actions, f"Invalid action ID: {response['action']}"
 

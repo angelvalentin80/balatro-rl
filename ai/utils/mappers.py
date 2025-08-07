@@ -150,7 +150,7 @@ class BalatroStateMapper:
         
         cards = hand.get('cards', [])
 
-        NON_CARDS_FEATURES = 2 # TODO Update this if we add more non-card features
+
         features.append(float(hand.get('size', 0)))
         features.append(float(hand.get('highlighted_count', 0)))
         
@@ -172,19 +172,17 @@ class BalatroStateMapper:
             }
             value = base.get('value')
             card_features.extend(make_onehot(values_mapping.get(value, 13), 14))
-            
-            # Nominal value (actual chip value used in game calculations)
-            card_features.append(base.get('nominal', 0.0))
 
             features.extend(card_features)
         
         # Pad or truncate to fixed size 
-        max_cards = 8  # TODO this might have to be updated in future if we go bigger Standard Balatro hand size
-        features_per_card = 21  # 1+5+14+1 = highlighted+suit_onehot+value_onehot+nominal
+        max_cards = 8  # Standard Balatro hand size
+        features_per_card = 20  # 1+5+14 = highlighted+suit_onehot+value_onehot
         
-        # If no cards in hand, pad with zeros
-        if len(features) == NON_CARDS_FEATURES:
-            features.extend([0.0] * (max_cards * features_per_card))
+        if len(features) < max_cards * features_per_card:
+            features.extend([0] * (max_cards * features_per_card - len(features)))
+        else:
+            features = features[:max_cards * features_per_card]
         
         return features
     
@@ -208,9 +206,8 @@ class BalatroStateMapper:
         features.extend(self._extract_round_features(state.get('round', {})))
         features.append(float(state.get('blind_chips', 0)))
         features.append(float(state.get('chips', 0)))
-        features.extend(make_onehot(state.get('state', 0), 20))
+        features.extend(make_onehot(state.get('state', 0), 10))  # Reduced state space
         features.append(float(state.get('game_over', 0)))
-        features.append(float(state.get('retry_count', 0)))
         features.extend(self._extract_hand_features(state.get('hand', {})))
         features.extend(self._extract_current_hand_scoring(state.get('current_hand', {})))
 
@@ -267,11 +264,12 @@ class BalatroStateMapper:
             "Flush Five"     # 12
         ]
         
-        hand_name = current_hand.get('handname', 'None')
-        if not hand_name:
-            hand_name = "None"
-        hand_index = hand_types.index(hand_name)
-
+        handname = current_hand.get('handname', 'None')
+        try:
+            hand_index = hand_types.index(handname)
+        except ValueError:
+            hand_index = 0  # Default to "None" for unknown hands
+            
         features.extend(make_onehot(hand_index, len(hand_types)))
         
         return features
@@ -307,13 +305,8 @@ class BalatroActionMapper:
             JSON response formatted for Balatro mod
         """
         ai_action = rl_action[self.slices["action_selection"]].tolist()[0]
-        
-        # Map AI indices to Balatro action IDs: 0->1, 1->2, 2->3
-        ai_to_balatro_mapping = {0: 1, 1: 2, 2: 3}  # SELECT_HAND, PLAY_HAND, DISCARD_HAND
-        balatro_action_id = ai_to_balatro_mapping.get(ai_action, 1)  # Default to SELECT_HAND
-        
         response_data = {
-            "action": balatro_action_id,
+            "action": ai_action + 1,  # Convert 0-based AI output to 1-based Balatro action IDs
             "params": self._extract_select_hand_params(rl_action),
         }
         self.response_validator.validate_response(response_data)

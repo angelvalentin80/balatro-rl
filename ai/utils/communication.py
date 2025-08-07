@@ -69,6 +69,8 @@ class BalatroPipeIO:
         Opens request pipe for reading and response pipe for writing.
         Keeps handles open to avoid deadlocks.
         """
+        import time
+        
         try:
             self.logger.info(f"🔧 Waiting for Balatro to connect...")
             self.logger.info(f"   Press 'R' in Balatro now to activate RL training!")
