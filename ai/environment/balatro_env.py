@@ -46,7 +46,7 @@ class BalatroEnv(gym.Env):
         self.MAX_ACTIONS = 3
         self.MAX_CARDS = 8  # Max cards in hand
         action_selection = np.array([self.MAX_ACTIONS])
-        card_indices = np.array([2] * self.MAX_CARDS) # 8 cards, each can be selected (1) or not (0) #TODO can we or have we already masked card selection?
+        card_indices = np.array([2] * self.MAX_CARDS) # 8 cards, each can be selected (1) or not (0)
         self.action_space = spaces.MultiDiscrete(np.concatenate([
             action_selection,
             card_indices
