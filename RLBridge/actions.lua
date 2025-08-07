@@ -7,33 +7,32 @@ local utils = require("utils")
 local ACTIONS = {}
 
 -- Action constants (like G.STATES pattern)
-ACTIONS.START_RUN = 1
-ACTIONS.SELECT_BLIND = 2
-ACTIONS.SELECT_HAND = 3
-ACTIONS.PLAY_HAND = 4
-ACTIONS.DISCARD_HAND = 5
+-- Core gameplay actions are 1,2,3 for clean AI mapping
+ACTIONS.SELECT_HAND = 1
+ACTIONS.PLAY_HAND = 2
+ACTIONS.DISCARD_HAND = 3
+-- Auto-executed actions (not exposed to AI)
+ACTIONS.START_RUN = 4
+ACTIONS.SELECT_BLIND = 5
 ACTIONS.RESTART_RUN = 6
-ACTIONS.CASH_OUT = 7
 
 -- Action mapping tables
 local ACTION_IDS = {
-    start_run = ACTIONS.START_RUN,
-    select_blind = ACTIONS.SELECT_BLIND,
     select_hand = ACTIONS.SELECT_HAND,
     play_hand = ACTIONS.PLAY_HAND,
     discard_hand = ACTIONS.DISCARD_HAND,
+    start_run = ACTIONS.START_RUN,
+    select_blind = ACTIONS.SELECT_BLIND,
     restart_run = ACTIONS.RESTART_RUN,
-    cash_out = ACTIONS.CASH_OUT,
 }
 
 local ID_TO_ACTION = {
-    [ACTIONS.START_RUN] = "start_run",
-    [ACTIONS.SELECT_BLIND] = "select_blind",
     [ACTIONS.SELECT_HAND] = "select_hand",
     [ACTIONS.PLAY_HAND] = "play_hand",
     [ACTIONS.DISCARD_HAND] = "discard_hand",
+    [ACTIONS.START_RUN] = "start_run",
+    [ACTIONS.SELECT_BLIND] = "select_blind",
     [ACTIONS.RESTART_RUN] = "restart_run",
-    [ACTIONS.CASH_OUT] = "cash_out",
 }
 
 -- Centralized action state tracking
@@ -110,15 +109,6 @@ local action_registry = {
         end,
         available_when = function()
             return (G.STATE == G.STATES.GAME_OVER or G.STATE == G.STATES.ROUND_EVAL) and not action_state.restart_run
-        end,
-    },
-    cash_out = {
-        execute = function(params)
-            ACTIONS.reset_state()
-            return input.cash_out()
-        end,
-        available_when = function()
-            return G.STATE == G.STATES.ROUND_EVAL and G.GAME.blind and G.GAME.blind.defeated and not action_state.cash_out
         end,
     },
 }
