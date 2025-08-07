@@ -10,7 +10,6 @@ from typing import Dict, Any, Tuple, List, Optional
 import logging
 import gymnasium as gym
 from gymnasium import spaces
-from ..utils.debug import tprint
 
 from ..utils.communication import BalatroPipeIO
 from .reward import BalatroRewardCalculator
@@ -43,11 +42,11 @@ class BalatroEnv(gym.Env):
 
         # Define Gymnasium spaces
         # Action Spaces; This should describe the type and shape of the action
-        # Constants
-        self.MAX_ACTIONS = 7 # get from balatro actions.lua
+        # Constants - Core gameplay actions only (SELECT_HAND=1, PLAY_HAND=2, DISCARD_HAND=3)
+        self.MAX_ACTIONS = 3
         self.MAX_CARDS = 8  # Max cards in hand
         action_selection = np.array([self.MAX_ACTIONS])
-        card_indices = np.array([2] * self.MAX_CARDS) # 8 cards, each can be selected (1) or not (0)
+        card_indices = np.array([2] * self.MAX_CARDS) # 8 cards, each can be selected (1) or not (0) #TODO can we or have we already masked card selection?
         self.action_space = spaces.MultiDiscrete(np.concatenate([
             action_selection,
             card_indices
@@ -60,7 +59,7 @@ class BalatroEnv(gym.Env):
         
         # Observation space: This should describe the type and shape of the observation
         # Constants
-        self.OBSERVATION_SIZE = 198 # Minimal observation space for ante 1 focus (removed retry_count) 
+        self.OBSERVATION_SIZE = 215
         self.observation_space = spaces.Box(
             low=-np.inf, # lowest bound of observation data
             high=np.inf, # highest bound of observation data
@@ -72,7 +71,7 @@ class BalatroEnv(gym.Env):
         self.state_mapper = BalatroStateMapper(observation_size=self.OBSERVATION_SIZE, max_actions=self.MAX_ACTIONS)
         self.action_mapper = BalatroActionMapper(action_slices=slices)
     
-    def reset(self, seed=None, options=None): #TODO add types
+    def reset(self, seed=None, options=None):
         """
         Reset the environment for a new episode
         
@@ -95,11 +94,6 @@ class BalatroEnv(gym.Env):
         if not initial_request:
             raise RuntimeError("Failed to receive initial request from Balatro")
 
-        # Send dummy response to complete hand shake
-        success = self.pipe_io.send_response({"action": "ready"})
-        if not success:
-            raise RuntimeError("Failed to complete handshake")
-         
         # Process initial state for SB3
         self.current_state = initial_request
         initial_observation = self.state_mapper.process_game_state(self.current_state)
@@ -140,7 +134,6 @@ class BalatroEnv(gym.Env):
         # Wait for next request with new game state
         next_request = self.pipe_io.wait_for_request()
         if not next_request:
-            # If no response, assume game ended
             self.game_over = True
             observation = self.state_mapper.process_game_state(self.current_state)
             reward = 0.0
@@ -149,30 +142,31 @@ class BalatroEnv(gym.Env):
         # Update current state
         self.current_state = next_request
         
+        # Check for game over condition
+        game_over_flag = self.current_state.get('game_state', {}).get('game_over', 0)
+        if game_over_flag == 1:
+            observation = self.state_mapper.process_game_state(self.current_state)
+            reward = self.reward_calculator.calculate_reward(
+                current_state=self.current_state,
+                prev_state=self.prev_state if self.prev_state else {}
+            )
+            
+            # Auto-send restart command to Balatro
+            restart_response = {"action": 6, "params": []}
+            self.pipe_io.send_response(restart_response)
+            
+            return observation, reward, True, False, {"game_over": True}
+        
         # Process new state for SB3
         observation = self.state_mapper.process_game_state(self.current_state)
         
-        # Calculate reward using expert reward calculator - no more retry penalties!
+        # Calculate reward using expert reward calculator
         reward = self.reward_calculator.calculate_reward(
             current_state=self.current_state,
             prev_state=self.prev_state if self.prev_state else {}
         )
         
-        # Check if episode is done - delay end until after restart
-        game_over_flag = self.current_state.get('game_state', {}).get('game_over', 0)
-        
-        if game_over_flag == 1:
-            if not self.restart_pending:
-                # First time seeing game over - don't end episode yet, wait for restart
-                self.restart_pending = True
-                done = False
-            else:
-                # Game has restarted after game over, now end episode
-                self.restart_pending = False
-                done = True
-        else:
-            # Normal gameplay, no episode end
-            done = False
+        done = False
             
         terminated = done
         truncated = False  # Not using time limits for now
@@ -181,10 +175,7 @@ class BalatroEnv(gym.Env):
         available_actions = next_request.get('available_actions', [])
         action_mask = self._create_action_mask(available_actions)
         
-        info = {
-            'balatro_state': self.current_state.get('state', 0),
-            'available_actions': available_actions,
-        }
+        info = {}
         
         # Store action mask for MaskablePPO
         self._action_masks = action_mask
@@ -211,16 +202,26 @@ class BalatroEnv(gym.Env):
         """Create action mask for MultiDiscrete space"""
         action_masks = []
         
-        # Action selection mask (7 possible actions)
+        # Action selection mask (3 possible actions: SELECT_HAND=1, PLAY_HAND=2, DISCARD_HAND=3)
+        # Map Balatro action IDs to AI indices: 1->0, 2->1, 3->2
         action_selection_mask = [False] * self.MAX_ACTIONS
+        balatro_to_ai_mapping = {1: 0, 2: 1, 3: 2}  # SELECT_HAND, PLAY_HAND, DISCARD_HAND
+        
         for action_id in available_actions:
-            if 1 <= action_id <= self.MAX_ACTIONS:
-                action_selection_mask[action_id - 1] = True
+            if action_id in balatro_to_ai_mapping:
+                ai_index = balatro_to_ai_mapping[action_id]
+                action_selection_mask[ai_index] = True
         action_masks.append(action_selection_mask)
         
-        # Card selection masks (8 cards, each can be 0 or 1)
-        for _ in range(self.MAX_CARDS):
-            action_masks.append([True, True])
+        # Card selection masks - context-aware based on available actions
+        if any(action_id in [2, 3] for action_id in available_actions):
+            # PLAY_HAND or DISCARD_HAND available - card params don't matter
+            for _ in range(self.MAX_CARDS):
+                action_masks.append([True, False])  # Force "not selected"
+        else:
+            # Only SELECT_HAND available - allow card selection
+            for _ in range(self.MAX_CARDS):
+                action_masks.append([True, True])
         
         # Flatten for MaskablePPO
         return [item for sublist in action_masks for item in sublist] 
