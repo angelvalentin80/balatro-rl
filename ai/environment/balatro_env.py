@@ -14,6 +14,7 @@ from gymnasium import spaces
 from ..utils.communication import BalatroPipeIO
 from .reward import BalatroRewardCalculator
 from ..utils.mappers import BalatroStateMapper, BalatroActionMapper
+from ..utils.replay import ReplaySystem
 
 
 class BalatroEnv(gym.Env):
@@ -40,6 +41,10 @@ class BalatroEnv(gym.Env):
         self.pipe_io = BalatroPipeIO()
         self.reward_calculator = BalatroRewardCalculator()
 
+        # Replay System
+        self.replay_system = ReplaySystem()
+        self.actions_taken = []
+
         # Define Gymnasium spaces
         # Action Spaces; This should describe the type and shape of the action
         # Constants - Core gameplay actions only (SELECT_HAND=1, PLAY_HAND=2, DISCARD_HAND=3)
@@ -59,7 +64,7 @@ class BalatroEnv(gym.Env):
         
         # Observation space: This should describe the type and shape of the observation
         # Constants
-        self.OBSERVATION_SIZE = 215
+        self.OBSERVATION_SIZE = 216
         self.observation_space = spaces.Box(
             low=-np.inf, # lowest bound of observation data
             high=np.inf, # highest bound of observation data
@@ -85,6 +90,7 @@ class BalatroEnv(gym.Env):
         self.prev_state = None
         self.game_over = False
         self.restart_pending = False
+        self.actions_taken = []
         
         # Reset reward tracking
         self.reward_calculator.reset()
@@ -126,7 +132,7 @@ class BalatroEnv(gym.Env):
 
         # Send action response to Balatro mod
         response_data = self.action_mapper.process_action(rl_action=action)
-        
+        self.actions_taken.append(response_data)
         success = self.pipe_io.send_response(response_data)
         if not success:
             raise RuntimeError("Failed to send response to Balatro")
@@ -141,9 +147,10 @@ class BalatroEnv(gym.Env):
         
         # Update current state
         self.current_state = next_request
+        game_state = self.current_state.get('game_state', {})
         
         # Check for game over condition
-        game_over_flag = self.current_state.get('game_state', {}).get('game_over', 0)
+        game_over_flag = game_state.get('game_over', 0)
         if game_over_flag == 1:
             observation = self.state_mapper.process_game_state(self.current_state)
             reward = self.reward_calculator.calculate_reward(
@@ -155,8 +162,33 @@ class BalatroEnv(gym.Env):
             restart_response = {"action": 6, "params": []}
             self.pipe_io.send_response(restart_response)
             
-            return observation, reward, True, False, {"game_over": True}
-        
+            return observation, reward, True, False, {}
+
+        # Check for game win condition
+        game_win_flag = game_state.get('game_win', 0)
+        if game_win_flag == 1:
+            observation = self.state_mapper.process_game_state(self.current_state)
+            reward = self.reward_calculator.calculate_reward(
+                current_state=self.current_state,
+                prev_state=self.prev_state if self.prev_state else {}
+            )
+
+            # Save replay
+            self.replay_system.try_save_replay(
+                file_path=self.replay_system.REPLAY_FILE_PATH,
+                seed=game_state.get('seed', ''),
+                actions=self.actions_taken,
+                score=reward,
+                chips=game_state.get('chips', 0)
+            )
+            
+            # Auto-send restart command to Balatro
+            restart_response = {"action": 6, "params": []}
+            self.pipe_io.send_response(restart_response)
+            
+            return observation, reward, True, False, {}
+
+
         # Process new state for SB3
         observation = self.state_mapper.process_game_state(self.current_state)
         

@@ -14,10 +14,16 @@ function O.get_game_state()
         game_over = 1
     end
 
+    local game_win = 0
+    if G.STATE == G.STATES.ROUND_EVAL then
+        game_win = 1
+    end
+
     return {
         -- Basic state info
         state = G.STATE,
         game_over = game_over,
+        game_win = game_win,
 
         -- Round info (hands/discards left)
         round = O.get_round_info(),
@@ -33,6 +39,9 @@ function O.get_game_state()
 
         -- Current hand scoring (chips × mult = score)
         current_hand = O.get_current_hand_scoring(),
+
+        -- Current seed
+        seed = G.GAME and G.GAME.pseudorandom.seed or 0,
     }
 end
 

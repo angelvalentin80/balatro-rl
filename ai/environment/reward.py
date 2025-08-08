@@ -58,7 +58,7 @@ class BalatroRewardCalculator:
         # Check if blind is defeated by comparing chips to requirement
         blind_chips = inner_game_state.get('blind_chips', 300) # TODO 300 only focusing on first blind
         # Only consider blind defeated if we actually have chips AND a valid blind requirement
-        blind_defeated = (current_chips > 0 and blind_chips > 0 and current_chips >= blind_chips)
+        blind_defeated = inner_game_state.get('game_win', 0)
         
         
         # Hand type info - use current hand scoring
