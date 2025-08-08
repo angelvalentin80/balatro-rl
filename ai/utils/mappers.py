@@ -210,6 +210,7 @@ class BalatroStateMapper:
         features.append(float(state.get('chips', 0)))
         features.extend(make_onehot(state.get('state', 0), 20))
         features.append(float(state.get('game_over', 0)))
+        features.append(float(state.get('game_win', 0)))
         features.append(float(state.get('retry_count', 0)))
         features.extend(self._extract_hand_features(state.get('hand', {})))
         features.extend(self._extract_current_hand_scoring(state.get('current_hand', {})))

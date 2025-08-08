@@ -51,10 +51,12 @@ class GameStateValidator:
         GameStateValidator._validate_round(game_state['round'])
         GameStateValidator._validate_current_hand(game_state['current_hand'])
         assert game_state["game_over"] in [0, 1]
+        assert game_state["game_win"] in [0, 1]
         assert isinstance(game_state["state"], int)
         assert isinstance(game_state["blind_chips"], (int, float))
         assert isinstance(game_state["chips"], (int, float))
         assert isinstance(game_state.get("retry_count", 0), int)
+        assert isinstance(game_state.get("seed", 0), str)
 
         return True
 
