@@ -1,16 +1,16 @@
 [
     {
-        "seed": "KLP4482W",
-        "timestamp": "2025-08-07T18:11:28.871685",
-        "chips": 436,
-        "score": 60.0,
+        "seed": "K6BU8HDR",
+        "timestamp": "2025-08-29T02:04:06.342668",
+        "chips": 1480,
+        "score": 71.0,
         "actions": [
             {
                 "action": 1,
                 "params": [
-                    2,
                     4,
                     5,
+                    6,
                     7,
                     8
                 ]
@@ -23,27 +23,15 @@
                 "action": 1,
                 "params": [
                     1,
-                    5,
-                    6,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    1,
                     2,
                     3,
                     4,
-                    5,
-                    6,
-                    7
+                    5
                 ]
+            },
+            {
+                "action": 2,
+                "params": []
             },
             {
                 "action": 1,
@@ -51,67 +39,6 @@
                     4,
                     5,
                     6,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    2,
-                    5,
-                    6,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    2,
-                    3,
-                    4,
-                    5,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 1,
-                "params": [
-                    1,
-                    8
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 1,
-                "params": [
-                    5,
                     7,
                     8
                 ]
@@ -124,10 +51,10 @@
                 "action": 1,
                 "params": [
                     1,
+                    2,
                     3,
                     4,
-                    5,
-                    7
+                    5
                 ]
             },
             {
@@ -137,15 +64,15 @@
         ]
     },
     {
-        "seed": "BY97T4QP",
-        "timestamp": "2025-08-07T18:35:12.707298",
-        "chips": 776,
-        "score": 60.0,
+        "seed": "8GXX5473",
+        "timestamp": "2025-08-25T22:38:23.688772",
+        "chips": 1471,
+        "score": 71.0,
         "actions": [
             {
                 "action": 1,
                 "params": [
-                    1,
+                    4,
                     5,
                     6,
                     7,
@@ -159,6 +86,7 @@
             {
                 "action": 1,
                 "params": [
+                    4,
                     5,
                     6,
                     7,
@@ -172,24 +100,47 @@
             {
                 "action": 1,
                 "params": [
-                    1,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 3,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    2,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
                     3,
                     4,
-                    6
+                    5,
+                    6,
+                    7,
+                    8
                 ]
-            },
-            {
-                "action": 3,
-                "params": []
             },
             {
                 "action": 1,
                 "params": [
-                    2,
                     4,
                     5,
                     6,
-                    7
+                    7,
+                    8
                 ]
             },
             {
@@ -199,10 +150,33 @@
             {
                 "action": 1,
                 "params": [
-                    1,
-                    2,
+                    3,
                     4,
-                    7
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
                 ]
             },
             {
@@ -213,6 +187,55 @@
                 "action": 1,
                 "params": [
                     1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    7
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    2,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    3,
+                    4,
                     5,
                     6,
                     7
@@ -239,29 +262,19 @@
         ]
     },
     {
-        "seed": "1DC84BSG",
-        "timestamp": "2025-08-07T18:59:58.223187",
-        "chips": 332,
-        "score": 60.0,
+        "seed": "EY3VVZ5T",
+        "timestamp": "2025-08-24T20:39:01.355497",
+        "chips": 1459,
+        "score": 71.0,
         "actions": [
             {
                 "action": 1,
                 "params": [
-                    1,
-                    2,
                     4,
                     5,
                     6,
-                    7
-                ]
-            },
-            {
-                "action": 1,
-                "params": [
-                    2,
-                    5,
-                    6,
-                    7
+                    7,
+                    8
                 ]
             },
             {
@@ -271,34 +284,22 @@
             {
                 "action": 1,
                 "params": [
-                    1,
                     3,
+                    4,
+                    5,
                     6,
-                    7
+                    7,
+                    8
                 ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    2,
-                    4,
-                    5,
-                    7
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
             },
             {
                 "action": 1,
                 "params": [
                     4,
-                    7
+                    5,
+                    6,
+                    7,
+                    8
                 ]
             },
             {
@@ -308,8 +309,58 @@
             {
                 "action": 1,
                 "params": [
-                    2,
+                    1,
+                    4,
                     5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 3,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    5,
+                    6,
+                    8
+                ]
+            },
+            {
+                "action": 3,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    5,
+                    6,
                     7,
                     8
                 ]
@@ -321,30 +372,20 @@
             {
                 "action": 1,
                 "params": [
+                    1,
                     2,
+                    3,
                     4,
                     5,
-                    6,
                     7
                 ]
             },
-            {
-                "action": 2,
-                "params": []
-            }
-        ]
-    },
-    {
-        "seed": "H4IT6EAB",
-        "timestamp": "2025-08-07T19:27:23.443022",
-        "chips": 339,
-        "score": 60.0,
-        "actions": [
             {
                 "action": 1,
                 "params": [
                     1,
                     2,
+                    3,
                     4,
                     5
                 ]
@@ -356,8 +397,9 @@
             {
                 "action": 1,
                 "params": [
-                    2,
+                    1,
                     3,
+                    4,
                     5,
                     6,
                     7,
@@ -368,82 +410,6 @@
                 "action": 1,
                 "params": [
                     1,
-                    6,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    3,
-                    8
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    2,
-                    4,
-                    5,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    1,
-                    4,
-                    6
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    2,
-                    4,
-                    5,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 2,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    2,
-                    4,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 2,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
                     4,
                     5,
                     6,
@@ -452,34 +418,11 @@
                 ]
             },
             {
-                "action": 2,
-                "params": []
-            }
-        ]
-    },
-    {
-        "seed": "EMG4E8K4",
-        "timestamp": "2025-08-07T19:29:52.075323",
-        "chips": 327,
-        "score": 60.0,
-        "actions": [
-            {
                 "action": 1,
                 "params": [
+                    3,
                     4,
                     5,
-                    8
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    2,
-                    3,
                     6,
                     8
                 ]
@@ -494,369 +437,27 @@
                     1,
                     2,
                     3,
-                    5
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    5,
-                    6,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    1,
-                    5,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 2,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    1,
-                    2,
-                    5,
-                    8
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    3,
-                    5,
-                    6,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 2,
-                "params": []
-            }
-        ]
-    },
-    {
-        "seed": "4IPNM8B2",
-        "timestamp": "2025-08-07T19:57:05.717942",
-        "chips": 371,
-        "score": 60.0,
-        "actions": [
-            {
-                "action": 1,
-                "params": [
-                    4,
-                    5,
-                    6,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7
-                ]
-            },
-            {
-                "action": 1,
-                "params": [
-                    1,
-                    2,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    2,
-                    3,
-                    4,
-                    6
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    1,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7
-                ]
-            },
-            {
-                "action": 1,
-                "params": [
-                    1,
-                    6,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 2,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    4,
-                    6,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 2,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    3,
-                    4
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    1,
-                    2,
-                    3,
-                    6,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 1,
-                "params": [
-                    1,
-                    2,
-                    3,
-                    5,
-                    6
-                ]
-            },
-            {
-                "action": 2,
-                "params": []
-            }
-        ]
-    },
-    {
-        "seed": "NWPTLWBD",
-        "timestamp": "2025-08-07T20:09:43.670033",
-        "chips": 311,
-        "score": 60.0,
-        "actions": [
-            {
-                "action": 1,
-                "params": [
-                    2,
-                    4,
-                    7
-                ]
-            },
-            {
-                "action": 2,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    8
-                ]
-            },
-            {
-                "action": 1,
-                "params": [
-                    2,
-                    5,
-                    6,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
                     4,
                     5
                 ]
             },
             {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    3,
-                    5,
-                    7
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    1,
-                    2,
-                    3,
-                    7
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    1,
-                    4,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 2,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    1,
-                    2,
-                    5,
-                    7,
-                    8
-                ]
-            },
-            {
                 "action": 2,
                 "params": []
             }
         ]
     },
     {
-        "seed": "UYX51NSH",
-        "timestamp": "2025-08-07T20:22:19.648737",
-        "chips": 303,
-        "score": 60.0,
+        "seed": "DKA53X5F",
+        "timestamp": "2025-08-21T03:11:31.842967",
+        "chips": 1448,
+        "score": 71.0,
         "actions": [
             {
                 "action": 1,
                 "params": [
-                    1,
-                    2,
-                    6,
-                    8
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    2,
-                    6
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
                     4,
-                    6,
-                    7
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    2,
-                    3,
-                    4,
-                    7
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    1,
-                    4,
+                    5,
                     6,
                     7,
                     8
@@ -869,6 +470,30 @@
             {
                 "action": 1,
                 "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
                     2,
                     3,
                     4,
@@ -877,86 +502,14 @@
                 ]
             },
             {
-                "action": 2,
-                "params": []
-            },
-            {
                 "action": 1,
                 "params": [
                     1,
                     2,
-                    5,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 2,
-                "params": []
-            }
-        ]
-    },
-    {
-        "seed": "D7GPR8HR",
-        "timestamp": "2025-08-07T20:57:04.348894",
-        "chips": 328,
-        "score": 60.0,
-        "actions": [
-            {
-                "action": 1,
-                "params": [
-                    1,
-                    2
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    1,
-                    3,
-                    6
-                ]
-            },
-            {
-                "action": 3,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    1,
-                    2,
-                    3,
-                    5,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 1,
-                "params": [
                     3,
                     4,
                     5,
                     6,
-                    8
-                ]
-            },
-            {
-                "action": 2,
-                "params": []
-            },
-            {
-                "action": 1,
-                "params": [
-                    2,
-                    3,
-                    4,
-                    6,
                     7,
                     8
                 ]
@@ -965,28 +518,18 @@
                 "action": 1,
                 "params": [
                     1,
+                    2,
                     3,
+                    4,
+                    5,
                     6
                 ]
-            },
-            {
-                "action": 3,
-                "params": []
             },
             {
                 "action": 1,
                 "params": [
                     1,
                     2,
-                    3,
-                    5,
-                    6,
-                    8
-                ]
-            },
-            {
-                "action": 1,
-                "params": [
                     3,
                     4,
                     5
@@ -1000,10 +543,252 @@
                 "action": 1,
                 "params": [
                     1,
+                    2,
                     3,
                     4,
+                    5,
+                    6
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    2,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    5,
                     6,
                     7
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    3,
+                    4,
+                    5,
+                    6,
+                    7
+                ]
+            },
+            {
+                "action": 3,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    4,
+                    5,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    3,
+                    4,
+                    5,
+                    6,
+                    7
+                ]
+            },
+            {
+                "action": 3,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    2,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 3,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
                 ]
             },
             {
@@ -1013,23 +798,283 @@
         ]
     },
     {
-        "seed": "T7X5B51X",
-        "timestamp": "2025-08-07T22:09:25.005174",
-        "chips": 412,
-        "score": 60.0,
+        "seed": "3T6LL7YS",
+        "timestamp": "2025-08-23T14:46:54.647165",
+        "chips": 1441,
+        "score": 78.0,
         "actions": [
             {
                 "action": 1,
                 "params": [
-                    1,
-                    2,
-                    3,
+                    4,
+                    5,
+                    6,
                     7,
                     8
                 ]
             },
             {
                 "action": 3,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 3,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 3,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    7
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            }
+        ]
+    },
+    {
+        "seed": "14CTXFPS",
+        "timestamp": "2025-08-27T11:46:17.260891",
+        "chips": 1437,
+        "score": 78.0,
+        "actions": [
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 3,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 3,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    7
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            }
+        ]
+    },
+    {
+        "seed": "E9QHZCA2",
+        "timestamp": "2025-08-23T04:01:05.442556",
+        "chips": 1428,
+        "score": 71.0,
+        "actions": [
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 3,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 2,
                 "params": []
             },
             {
@@ -1038,6 +1083,17 @@
                     2,
                     4,
                     5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    5,
+                    6,
                     7,
                     8
                 ]
@@ -1052,8 +1108,23 @@
                     1,
                     2,
                     3,
+                    4,
+                    5
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    3,
+                    4,
                     5,
                     6,
+                    7,
                     8
                 ]
             },
@@ -1061,6 +1132,41 @@
                 "action": 1,
                 "params": [
                     1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    3,
                     4,
                     5,
                     6,
@@ -1074,11 +1180,11 @@
             {
                 "action": 1,
                 "params": [
+                    1,
                     2,
+                    3,
                     4,
-                    6,
-                    7,
-                    8
+                    5
                 ]
             },
             {
@@ -1089,7 +1195,55 @@
                 "action": 1,
                 "params": [
                     1,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
                     2,
+                    3,
+                    4,
+                    5
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            }
+        ]
+    },
+    {
+        "seed": "A8YJNDZX",
+        "timestamp": "2025-08-13T15:27:20.741669",
+        "chips": 1402,
+        "score": 78.0,
+        "actions": [
+            {
+                "action": 1,
+                "params": [
+                    2,
+                    3,
                     4,
                     5,
                     6,
@@ -1099,8 +1253,8 @@
             {
                 "action": 1,
                 "params": [
-                    2,
                     3,
+                    4,
                     5,
                     6,
                     7
@@ -1115,31 +1269,219 @@
                 "params": [
                     1,
                     2,
+                    4,
+                    5,
+                    6,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    2,
+                    3,
+                    4,
+                    5,
+                    6
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            }
+        ]
+    },
+    {
+        "seed": "816DKXTL",
+        "timestamp": "2025-08-25T18:27:09.184964",
+        "chips": 1388,
+        "score": 78.0,
+        "actions": [
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 3,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    4,
                     5,
                     6,
                     7,
                     8
+                ]
+            },
+            {
+                "action": 3,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    4,
+                    5,
+                    6
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 3,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            }
+        ]
+    },
+    {
+        "seed": "VGMPJ17U",
+        "timestamp": "2025-08-20T14:38:14.892006",
+        "chips": 1385,
+        "score": 78.0,
+        "actions": [
+            {
+                "action": 1,
+                "params": [
+                    4,
+                    5,
+                    6,
+                    7,
+                    8
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ]
+            },
+            {
+                "action": 2,
+                "params": []
+            },
+            {
+                "action": 1,
+                "params": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6
                 ]
             },
             {
                 "action": 1,
                 "params": [
                     1,
+                    2,
+                    3,
                     4,
-                    5,
-                    6,
-                    7,
-                    8
-                ]
-            },
-            {
-                "action": 1,
-                "params": [
-                    4,
-                    5,
-                    6,
-                    7,
-                    8
+                    5
                 ]
             },
             {

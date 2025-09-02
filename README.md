@@ -18,17 +18,13 @@ Made a symlink -> ln -s ~/dev/balatro-rl/RLBridge /mnt/gamerlinuxssd/SteamLibrar
 ### File-based Communication
 - [x] JSON file communication system
 - [x] Lua file writer in mod
-- [x] Python file watcher with watchdog
 - [x] Game state transmission (hand cards, chips, available actions)
 - [x] Action reception and execution
 
 ### RL Training
-- [x] Python RL environment setup
-- [x] AI model architecture
-- [x] Training loop integration
+- [x] Python RL custom environment setup
 
 ### Game Features  
-- [x] Always have restart_run as an action option assuming the game is ongoing
 - [x] Make it so that if we lose, we can restart, or if we win a round and see the "cash out" 
 page, then we also restart. but getting to the "cash out" state should give a ton of reward to incentivize
 the AI
@@ -47,6 +43,10 @@ chips. Perhpas we just want to get wins of rounds just scoring chips is not enou
     - We would probably store the raw requests and raw responses, and if we win, we can save, if not we can reset the list
     - The idea is that I'll have the seed so I can just look at the actions the requests and responses, plugin the seed manually in the game and play it out myself
     - Add something where we only keep top 5. I don't to have a long log of a bunch of wins
+- [x] Should I reward higher for beating the game in the least amount of hands possible? Notice that if it plays more hands it gets more reward vs if it plays 1 hand even if it's a really good hand
+- [x] on that note should we give more reward for having MONSTER hands. for example they are getting rewards based on blind size, but what if they surpass that by a bunch like get the blind size or greater in one hand? maybe that solves the above problem?
+- [ ] Speed up training somehow. Is parallelization possible? Maybe through docker and buying Balatro on multiple steam accounts
 
 
 ### DEBUGGING
+- [ ] I think it's counting the reset as an episode? review how it calculates episodes for logging in rewards I think something MIGHT be wrong. Also just check it in general because AI wrote it I might need to udpate

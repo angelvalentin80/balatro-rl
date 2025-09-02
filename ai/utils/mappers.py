@@ -271,7 +271,11 @@ class BalatroStateMapper:
         hand_name = current_hand.get('handname', 'None')
         if not hand_name:
             hand_name = "None"
-        hand_index = hand_types.index(hand_name)
+        
+        try:
+            hand_index = hand_types.index(hand_name)
+        except ValueError:
+            hand_index = 0  # Default to "None" if hand type not found
 
         features.extend(make_onehot(hand_index, len(hand_types)))
         
