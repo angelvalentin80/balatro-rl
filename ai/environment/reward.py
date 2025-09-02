@@ -29,10 +29,11 @@ class BalatroRewardCalculator:
         self.winning_chips = 0  # Store chips when blind is defeated
         
         # Percentage-based reward thresholds (% of blind requirement)
+        # Updated to encourage bigger single hands
         self.REWARD_THRESHOLDS = {
-            "excellent": 80.0,  # 80%+ of blind requirement
-            "good": 50.0,       # 50-79% of blind requirement  
-            "decent": 25.0      # 25-49% of blind requirement
+            "excellent": 75.0,  # 75%+ of blind requirement (lowered from 80%)
+            "good": 40.0,       # 40-74% of blind requirement (lowered from 50%)
+            "decent": 20.0      # 20-39% of blind requirement (lowered from 25%)
         }
         
     def calculate_reward(self, current_state: Dict[str, Any], 
@@ -81,7 +82,11 @@ class BalatroRewardCalculator:
             # Calculate percentage of blind requirement this hand achieved
             chip_percentage = (chip_gain / blind_chips) * 100
             
-            if chip_percentage >= self.REWARD_THRESHOLDS["excellent"]:
+            # Monster hand bonus - overkill reward for beating blind in one shot
+            if chip_percentage >= 100:
+                reward += 20.0  # Huge bonus for one-shot blind completion
+                reward_breakdown.append(f"MONSTER HAND - One-shot blind kill (+{chip_gain} chips, {chip_percentage:.1f}%): +20.0")
+            elif chip_percentage >= self.REWARD_THRESHOLDS["excellent"]:
                 reward += 10.0
                 reward_breakdown.append(f"Excellent hand (+{chip_gain} chips, {chip_percentage:.1f}% of blind): +10.0")
             elif chip_percentage >= self.REWARD_THRESHOLDS["good"]:
@@ -101,8 +106,34 @@ class BalatroRewardCalculator:
         # === BLIND COMPLETION ===
         # Main goal - beat the blind (only reward once per episode)
         if blind_defeated and not self.blind_already_defeated and game_over == 0:
-            reward += 50.0  # SUCCESS! Normalized from +500 to +50
-            reward_breakdown.append(f"BLIND DEFEATED: +50.0")
+            base_reward = 50.0
+            
+            # Calculate hands used (starting hands - hands_left)
+            round_info = inner_game_state.get('round', {})
+            hands_left = round_info.get('hands_left', 0)
+            # Assume we start with 4 hands in ante 1
+            hands_used = 4 - hands_left
+            
+            # Efficiency bonus - reward fewer hands used
+            if hands_used == 1:
+                efficiency_bonus = 25.0
+                reward_breakdown.append(f"ONE-HAND VICTORY BONUS: +{efficiency_bonus}")
+            elif hands_used == 2:
+                efficiency_bonus = 15.0
+                reward_breakdown.append(f"Two-hand efficiency bonus: +{efficiency_bonus}")
+            elif hands_used == 3:
+                efficiency_bonus = 8.0
+                reward_breakdown.append(f"Three-hand efficiency bonus: +{efficiency_bonus}")
+            else:
+                efficiency_bonus = max(0, 5.0 - hands_used)  # Diminishing returns
+                if efficiency_bonus > 0:
+                    reward_breakdown.append(f"Efficiency bonus: +{efficiency_bonus:.1f}")
+                else:
+                    efficiency_bonus = 0
+            
+            total_blind_reward = base_reward + efficiency_bonus
+            reward += total_blind_reward
+            reward_breakdown.append(f"BLIND DEFEATED: +{base_reward} (base)")
             self.blind_already_defeated = True
             self.winning_chips = current_chips  # Store winning chip count
             

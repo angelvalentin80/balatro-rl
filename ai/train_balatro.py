@@ -243,7 +243,7 @@ if __name__ == "__main__":
                 print(f"📂 Found checkpoint: {latest_checkpoint}")
         
         model = train_agent(
-            total_timesteps=100000,
+            total_timesteps=250000,
             save_path="./models/balatro_trained",
             resume_from=str(latest_checkpoint) if latest_checkpoint else None
         )

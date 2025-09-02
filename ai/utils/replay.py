@@ -8,7 +8,7 @@ class ReplaySystem:
         self.REPLAY_FILE_PATH = "replays.json"
 
     def try_save_replay(self, file_path: str, seed: str, actions: List[Dict[str, Any]], score: float, chips: int):
-        """Save the current replay to a file if the score is among the top MAX_REPLAYS."""
+        """Save the current replay to a file if the chips is among the top MAX_REPLAYS."""
         timestamp = datetime.now().isoformat()
         
         replay_data = {
@@ -26,17 +26,17 @@ class ReplaySystem:
         if len(replays) < self.MAX_REPLAYS:
             replays.append(replay_data)
         else:
-            # Check if this score is higher than the lowest score
-            replays.sort(key=lambda x: x['score'], reverse=True)
-            if score > replays[-1]['score']:
-                # Replace the lowest scoring replay
+            # Check if this chips count is higher than the lowest chips count
+            replays.sort(key=lambda x: x['chips'], reverse=True)
+            if chips > replays[-1]['chips']:
+                # Replace the lowest chip count replay
                 replays[-1] = replay_data
             else:
-                # Score is not high enough, don't add it
+                # Chips count is not high enough, don't add it
                 return len(replays)
         
-        # Sort by score (highest first) and keep only top MAX_REPLAYS
-        replays.sort(key=lambda x: x['score'], reverse=True)
+        # Sort by chips (highest first) and keep only top MAX_REPLAYS
+        replays.sort(key=lambda x: x['chips'], reverse=True)
         replays = replays[:self.MAX_REPLAYS]
         
         # Save back to file
@@ -65,9 +65,9 @@ class ReplaySystem:
             json.dump(replays, f, indent=4)
 
     def sort_replays(self, file_path: str) -> List[Dict[str, Any]]:
-        """Sort replays by score and return the top MAX_REPLAYS."""
+        """Sort replays by chips and return the top MAX_REPLAYS."""
         replays = self.load_replays(file_path)
-        replays.sort(key=lambda x: x['score'], reverse=True)
+        replays.sort(key=lambda x: x['chips'], reverse=True)
         return replays[:self.MAX_REPLAYS]
 
     def get_top_replays(self, file_path: str, count: int = None) -> List[Dict[str, Any]]:
@@ -76,7 +76,7 @@ class ReplaySystem:
             count = self.MAX_REPLAYS
         
         replays = self.load_replays(file_path)
-        replays.sort(key=lambda x: x['score'], reverse=True)
+        replays.sort(key=lambda x: x['chips'], reverse=True)
         return replays[:count]
 
     def clear_replays(self, file_path: str):
