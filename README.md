@@ -1,52 +1,49 @@
-# balatro-rl
+# Balatro RL
 
-## Reinforcement Learning in Balatro
+A reinforcement learning agent that plays Balatro using a custom mod and Python training environment.
 
-The goal is the follow:
-- Make a mod for Balatro to read data and do certain actions
-- Have a reinforcement learning ai see that data and perform actions and learn over time
+## Overview
 
+This project combines a Balatro mod (RLBridge) with a Python reinforcement learning environment to train an AI agent to play Balatro. The mod extracts game state information and executes actions from the RL agent via a dual-pipe communication system.
 
-## How to set up
-- Use this to figure out how to setup smodded -> https://github.com/Steamodded/smods
+## Features
 
-I am currenly on Arch Linux, so I had to follow the setup through Proton
-Currently writing code in a more reliable directory and having it symlink to the correct directory mods folder
-Made a symlink -> ln -s ~/dev/balatro-rl/RLBridge /mnt/gamerlinuxssd/SteamLibrary/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods/RLBridge
+- **Game State Extraction**: Reads hand cards, chips, available hands/discards, and other game state data
+- **Action Execution**: AI can play hands, discard cards, select hands
+- **Dual-pipe Communication**: Request/response system using named pipes for real-time communication
+- **Replay System**: Automatically saves winning games with top 10 highest chip score 
+- **Custom Reward Function**: Rewards efficient play, complex hands, and winning rounds
+- **Automated Training**: Runs automatically start new games after wins/losses
 
-## TODO/CHANGELOG
-### File-based Communication
-- [x] JSON file communication system
-- [x] Lua file writer in mod
-- [x] Game state transmission (hand cards, chips, available actions)
-- [x] Action reception and execution
+## Installation
 
-### RL Training
-- [x] Python RL custom environment setup
+### Prerequisites
+- Balatro (Steam version)
+- [Lovely Injector](https://github.com/ethangreen-dev/lovely-injector) for mod injection
+- Python 3.8+ with dependencies (requirements.txt)
 
-### Game Features  
-- [x] Make it so that if we lose, we can restart, or if we win a round and see the "cash out" 
-page, then we also restart. but getting to the "cash out" state should give a ton of reward to incentivize
-the AI
-- [x] Should we add things that help the AI understand they have only 4 hands and 4 discards to work with? or whatever
-number it is? I think we should add the hands and discards in the game state as well that would be useful
-- [x] Bug where AI can discard infinite times
-- [x] Should we not give reward for just plain increasing chips? if you think about it, you can play anything and increase
-chips. Perhpas we just want to get wins of rounds just scoring chips is not enough?. Wonder if the losing penatly is not enough
-- [x] I wonder if there's a problem with the fact that they get points out of every hand played. I feel like it should learn to play more complex hands instead of just getting points even if just one hand scores we should maybe have the rewards reflect that
+### Setup
+1. Install Lovely Injector following their instructions
+2. Install Python dependencies: `pip install -r requirements.txt`
+3. Launch Balatro with Lovely Injector enabled (more details in lovely-injector docs)
+4. Run the Python training script: `python -m ai.train_balatro`
 
+## Architecture
 
-### RL Enhancements
-- [x] **Retry Count Penalty**: Penalize high retry_count in rewards to discourage invalid actions. Currently retry_count tracks failed action attempts, but we could use this signal to teach the AI which actions are actually valid in each state. Formula: `reward -= retry_count * penalty_factor`. This would incentivize the AI to learn valid action spaces rather than trial-and-error.
-- [x] I just noticed the RL model scored a 592. It would be amazing to have that saved somewhere.
-    - Create replay system that only saves winning games into a file or something (TBD)
-    - We would probably store the raw requests and raw responses, and if we win, we can save, if not we can reset the list
-    - The idea is that I'll have the seed so I can just look at the actions the requests and responses, plugin the seed manually in the game and play it out myself
-    - Add something where we only keep top 5. I don't to have a long log of a bunch of wins
-- [x] Should I reward higher for beating the game in the least amount of hands possible? Notice that if it plays more hands it gets more reward vs if it plays 1 hand even if it's a really good hand
-- [x] on that note should we give more reward for having MONSTER hands. for example they are getting rewards based on blind size, but what if they surpass that by a bunch like get the blind size or greater in one hand? maybe that solves the above problem?
-- [ ] Speed up training somehow. Is parallelization possible? Maybe through docker and buying Balatro on multiple steam accounts
+- **RLBridge Mod**: Lua mod using Lovely's patching system to hook into game state
+- **Named Pipes**: Dual-pipe system (`/tmp/balatro_request`, `/tmp/balatro_response`) for communication.
+- **Python Environment**: Custom Gym environment for RL training
+- **Replay System**: JSON-based storage of winning game sequences
 
+## Future Work
 
-### DEBUGGING
-- [ ] I think it's counting the reset as an episode? review how it calculates episodes for logging in rewards I think something MIGHT be wrong. Also just check it in general because AI wrote it I might need to udpate
+- Explore training parallelization (possibly via Docker/multiple instances)
+
+---
+
+## Development Notes (Personal)
+
+Symlink for development (Arch Linux with Proton):
+```bash
+ln -s ~/dev/balatro-rl/RLBridge /mnt/gamerlinuxssd/SteamLibrary/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods/RLBridge
+```
